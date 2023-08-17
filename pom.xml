@@ -46,6 +46,8 @@
         <testcontainers.version>1.18.3</testcontainers.version>
         <reactor-extra.version>3.5.1</reactor-extra.version>
         <blockhound.version>1.0.8.RELEASE</blockhound.version>
+        <testcontainers-redis.version>1.6.4</testcontainers-redis.version>
+        <spring-cloud-starter-bootstrap.version>3.1.7</spring-cloud-starter-bootstrap.version>
     </properties>
 
     <dependencies>
@@ -92,6 +94,12 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.redis.testcontainers</groupId>
+            <artifactId>testcontainers-redis</artifactId>
+            <version>${testcontainers-redis.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

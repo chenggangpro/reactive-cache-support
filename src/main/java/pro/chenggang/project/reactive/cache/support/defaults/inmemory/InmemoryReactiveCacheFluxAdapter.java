@@ -69,7 +69,10 @@ public class InmemoryReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapte
 
     @Override
     public Mono<Void> cleanupData(@NonNull String cacheKey) {
-        return Mono.fromFuture(CompletableFuture.runAsync(() -> fluxDataCache.removeData(cacheKey)));
+        return Mono.fromFuture(CompletableFuture.runAsync(() -> {
+            fluxDataCache.removeData(cacheKey);
+            log.debug("[Inmemory reactive cache flux adapter]Cleanup cached data success, CacheKey: {}", cacheKey);
+        }));
     }
 
 }

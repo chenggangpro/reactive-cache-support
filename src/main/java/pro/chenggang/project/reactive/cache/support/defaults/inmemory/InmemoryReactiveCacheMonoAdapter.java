@@ -49,6 +49,9 @@ public class InmemoryReactiveCacheMonoAdapter implements ReactiveCacheMonoAdapte
 
     @Override
     public Mono<Void> cleanupData(@NonNull String cacheKey) {
-        return Mono.defer(() -> Mono.fromFuture(CompletableFuture.runAsync(() -> monoDataCache.removeData(cacheKey))));
+        return Mono.defer(() -> Mono.fromFuture(CompletableFuture.runAsync(() -> {
+            monoDataCache.removeData(cacheKey);
+            log.debug("[Inmemory reactive cache mono adapter]Cleanup cached data success, CacheKey: {}", cacheKey);
+        })));
     }
 }
