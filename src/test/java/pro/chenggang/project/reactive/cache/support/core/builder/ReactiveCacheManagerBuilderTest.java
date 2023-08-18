@@ -73,7 +73,6 @@ class ReactiveCacheManagerBuilderTest {
     void testNewInmemoryReactiveManagerBuilder() {
         ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder()
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
-                .withInmemoryReactiveCacheLock()
                 .build();
         Assertions.assertNotNull(reactiveCacheManager);
     }
@@ -83,7 +82,6 @@ class ReactiveCacheManagerBuilderTest {
         ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newRedisReactiveManagerBuilder(
                         reactiveRedisTemplate)
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
-                .withRedisReactiveCacheLock()
                 .build();
         Assertions.assertNotNull(reactiveCacheManager);
     }

@@ -42,7 +42,6 @@ public class ReactiveCacheAutoConfiguration {
     public ReactiveCacheManager inmemoryReactiveCacheManager(ReactiveCacheSupportProperties reactiveCacheSupportProperties) {
         return ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder()
                 .withMaxWaitingDuration(reactiveCacheSupportProperties.getMaxWaitingDuration())
-                .withInmemoryReactiveCacheLock()
                 .build();
     }
 
@@ -55,7 +54,6 @@ public class ReactiveCacheAutoConfiguration {
                                                           ReactiveRedisTemplate reactiveRedisTemplate) {
         return ReactiveCacheManagerBuilder.newRedisReactiveManagerBuilder(reactiveRedisTemplate)
                 .withMaxWaitingDuration(reactiveCacheSupportProperties.getMaxWaitingDuration())
-                .withRedisReactiveCacheLock()
                 .build();
     }
 }

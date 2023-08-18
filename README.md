@@ -24,7 +24,6 @@
 ```java
 ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder()
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
-                .withInmemoryReactiveCacheLock()
                 .build();
 ```
 
@@ -34,7 +33,6 @@ ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmem
 ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newRedisReactiveManagerBuilder(
                         reactiveRedisTemplate)
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
-                .withRedisReactiveCacheLock()
                 .build();
 ```
 
