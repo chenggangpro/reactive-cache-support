@@ -1,12 +1,15 @@
 package pro.chenggang.project.reactive.cache.support.defaults.executor.inmemory;
 
+import lombok.NonNull;
 import org.junit.jupiter.api.Test;
 import pro.chenggang.project.reactive.cache.support.BaseTest;
+import pro.chenggang.project.reactive.cache.support.core.adapter.ReactiveCacheFluxAdapter;
 import pro.chenggang.project.reactive.cache.support.defaults.executor.DefaultReactiveFluxCache;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheFluxAdapter;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheLock;
 import pro.chenggang.project.reactive.cache.support.exception.NoSuchCachedReactiveDataException;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -79,9 +82,89 @@ class InmemoryDefaultReactiveFluxCacheTest extends BaseTest {
 
     @Test
     void evictCache() {
-        defaultReactiveFluxCache
-                .evictCache(cacheKey)
+        defaultReactiveFluxCache.evictCache(cacheKey)
                 .as(StepVerifier::create)
                 .verifyComplete();
+    }
+
+    @Test
+    void evictCacheWithError(){
+        DefaultReactiveFluxCache defaultReactiveFluxCache = new DefaultReactiveFluxCache(cacheName,
+                maxWaitingDuration,
+                new InmemoryReactiveCacheLock(),
+                new ErrorReactiveCacheFluxAdapter()
+        );
+        defaultReactiveFluxCache.evictCache(cacheKey)
+                .as(StepVerifier::create)
+                .expectError(IllegalStateException.class)
+                .verify();
+    }
+
+    @Test
+    void evictCacheWithCancel(){
+        DefaultReactiveFluxCache defaultReactiveFluxCache = new DefaultReactiveFluxCache(cacheName,
+                maxWaitingDuration,
+                new InmemoryReactiveCacheLock(),
+                new CancelReactiveCacheFluxAdapter()
+        );
+        defaultReactiveFluxCache.evictCache(cacheKey)
+                .delayElement(Duration.ofMillis(500))
+                .as(StepVerifier::create)
+                .thenAwait(Duration.ofMillis(500))
+                .thenCancel()
+                .verify();
+    }
+
+    private static class ErrorReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapter {
+
+        @Override
+        public Mono<Boolean> hasData(@NonNull String cacheKey) {
+            return Mono.just(true);
+        }
+
+        @Override
+        public <T> Flux<T> loadData(@NonNull String cacheKey) {
+            return Flux.empty();
+        }
+
+        @Override
+        public <T> Flux<T> cacheData(@NonNull String cacheKey,
+                                     @NonNull Duration cacheDuration,
+                                     @NonNull Flux<T> sourcePublisher) {
+            return sourcePublisher;
+        }
+
+        @Override
+        public Mono<Void> cleanupData(@NonNull String cacheKey) {
+            return Mono.error(new IllegalStateException())
+                    .then();
+        }
+    }
+
+    private static class CancelReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapter {
+
+        @Override
+        public Mono<Boolean> hasData(@NonNull String cacheKey) {
+            return Mono.just(true);
+        }
+
+        @Override
+        public <T> Flux<T> loadData(@NonNull String cacheKey) {
+            return Flux.empty();
+        }
+
+        @Override
+        public <T> Flux<T> cacheData(@NonNull String cacheKey,
+                                     @NonNull Duration cacheDuration,
+                                     @NonNull Flux<T> sourcePublisher) {
+            return sourcePublisher;
+        }
+
+        @Override
+        public Mono<Void> cleanupData(@NonNull String cacheKey) {
+            return Mono.defer(() -> Mono.just(true)
+                    .delayElement(Duration.ofSeconds(1)))
+                    .then();
+        }
     }
 }

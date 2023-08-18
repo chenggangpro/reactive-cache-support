@@ -143,7 +143,6 @@ class RedisReactiveCacheLockTest extends BaseTestWithRedis{
     static final AtomicBoolean competingResource = new AtomicBoolean(false);
 
     Mono<Boolean> singleLockOperation(Integer index) {
-        AtomicBoolean alreadyReleaseFlag = new AtomicBoolean(false);
         return Mono.usingWhen(
                         redisReactiveCacheLock.tryLockInitializeLock(cacheName,
                                 cacheKey,
@@ -171,31 +170,16 @@ class RedisReactiveCacheLockTest extends BaseTestWithRedis{
                                     })
                                     .thenReturn(true);
                         },
-                        value -> {
-                            if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                                return redisReactiveCacheLock.releaseInitializeLock(cacheName,
+                        value -> redisReactiveCacheLock.releaseInitializeLock(cacheName,
+                                cacheKey
+                        ),
+                        (value, throwable) -> redisReactiveCacheLock.releaseInitializeLock(cacheName,
                                         cacheKey
-                                );
-                            }
-                            return Mono.empty();
-                        },
-                        (value, throwable) -> {
-                            if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                                return redisReactiveCacheLock.releaseInitializeLock(cacheName,
-                                                cacheKey
-                                        )
-                                        .then(Mono.error(throwable));
-                            }
-                            return Mono.empty();
-                        },
-                        value -> {
-                            if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                                return redisReactiveCacheLock.releaseInitializeLock(cacheName,
-                                        cacheKey
-                                );
-                            }
-                            return Mono.empty();
-                        }
+                                )
+                                .then(Mono.error(throwable)),
+                        value -> redisReactiveCacheLock.releaseInitializeLock(cacheName,
+                                cacheKey
+                        )
                 )
                 .onErrorResume(ReactiveCacheLoadExhaustedException.class, throwable -> Mono.just(false));
     }

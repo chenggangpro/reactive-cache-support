@@ -140,7 +140,6 @@ class InmemoryInitializeLockTest extends BaseTest {
     static final AtomicBoolean competingResource = new AtomicBoolean(false);
 
     Mono<Boolean> singleLockOperation(Integer index) {
-        AtomicBoolean alreadyReleaseFlag = new AtomicBoolean(false);
         return Mono.usingWhen(
                         inmemoryInitializeLock.tryLockInitializeLock(cacheName,
                                 cacheKey,
@@ -168,31 +167,16 @@ class InmemoryInitializeLockTest extends BaseTest {
                                     })
                                     .thenReturn(true);
                         },
-                        value -> {
-                            if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                                return inmemoryInitializeLock.releaseInitializeLock(cacheName,
+                        value -> inmemoryInitializeLock.releaseInitializeLock(cacheName,
+                                cacheKey
+                        ),
+                        (value, throwable) -> inmemoryInitializeLock.releaseInitializeLock(cacheName,
                                         cacheKey
-                                );
-                            }
-                            return Mono.empty();
-                        },
-                        (value, throwable) -> {
-                            if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                                return inmemoryInitializeLock.releaseInitializeLock(cacheName,
-                                                cacheKey
-                                        )
-                                        .then(Mono.error(throwable));
-                            }
-                            return Mono.empty();
-                        },
-                        value -> {
-                            if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                                return inmemoryInitializeLock.releaseInitializeLock(cacheName,
-                                        cacheKey
-                                );
-                            }
-                            return Mono.empty();
-                        }
+                                )
+                                .then(Mono.error(throwable)),
+                        value -> inmemoryInitializeLock.releaseInitializeLock(cacheName,
+                                cacheKey
+                        )
                 )
                 .onErrorResume(ReactiveCacheLoadExhaustedException.class, throwable -> Mono.just(false));
     }

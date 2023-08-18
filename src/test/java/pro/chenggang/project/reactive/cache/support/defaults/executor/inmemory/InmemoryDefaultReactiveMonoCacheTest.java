@@ -1,7 +1,9 @@
 package pro.chenggang.project.reactive.cache.support.defaults.executor.inmemory;
 
+import lombok.NonNull;
 import org.junit.jupiter.api.Test;
 import pro.chenggang.project.reactive.cache.support.BaseTest;
+import pro.chenggang.project.reactive.cache.support.core.adapter.ReactiveCacheMonoAdapter;
 import pro.chenggang.project.reactive.cache.support.defaults.executor.DefaultReactiveMonoCache;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheLock;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheMonoAdapter;
@@ -81,5 +83,86 @@ class InmemoryDefaultReactiveMonoCacheTest extends BaseTest {
         defaultReactiveMonoCache.evictCache(cacheKey)
                 .as(StepVerifier::create)
                 .verifyComplete();
+    }
+
+    @Test
+    void evictCacheWithError(){
+        DefaultReactiveMonoCache defaultReactiveMonoCache = new DefaultReactiveMonoCache(cacheName,
+                maxWaitingDuration,
+                new InmemoryReactiveCacheLock(),
+                new ErrorReactiveCacheMonoAdapter()
+        );
+        defaultReactiveMonoCache.evictCache(cacheKey)
+                .as(StepVerifier::create)
+                .expectError(IllegalStateException.class)
+                .verify();
+    }
+
+    @Test
+    void evictCacheWithCancel(){
+        DefaultReactiveMonoCache defaultReactiveMonoCache = new DefaultReactiveMonoCache(cacheName,
+                maxWaitingDuration,
+                new InmemoryReactiveCacheLock(),
+                new CancelReactiveCacheMonoAdapter()
+        );
+        defaultReactiveMonoCache.evictCache(cacheKey)
+                .delayElement(Duration.ofMillis(500))
+                .as(StepVerifier::create)
+                .thenAwait(Duration.ofMillis(500))
+                .thenCancel()
+                .verify();
+    }
+
+    private static class ErrorReactiveCacheMonoAdapter implements ReactiveCacheMonoAdapter {
+
+        @Override
+        public Mono<Boolean> hasData(@NonNull String cacheKey) {
+            return Mono.just(true);
+        }
+
+        @Override
+        public <T> Mono<T> loadData(@NonNull String cacheKey) {
+            return Mono.empty();
+        }
+
+        @Override
+        public <T> Mono<T> cacheData(@NonNull String cacheKey,
+                                     @NonNull Duration cacheDuration,
+                                     @NonNull Mono<T> sourcePublisher) {
+            return sourcePublisher;
+        }
+
+        @Override
+        public Mono<Void> cleanupData(@NonNull String cacheKey) {
+            return Mono.error(new IllegalStateException())
+                    .then();
+        }
+    }
+
+    private static class CancelReactiveCacheMonoAdapter implements ReactiveCacheMonoAdapter {
+
+        @Override
+        public Mono<Boolean> hasData(@NonNull String cacheKey) {
+            return Mono.just(true);
+        }
+
+        @Override
+        public <T> Mono<T> loadData(@NonNull String cacheKey) {
+            return Mono.empty();
+        }
+
+        @Override
+        public <T> Mono<T> cacheData(@NonNull String cacheKey,
+                                     @NonNull Duration cacheDuration,
+                                     @NonNull Mono<T> sourcePublisher) {
+            return sourcePublisher;
+        }
+
+        @Override
+        public Mono<Void> cleanupData(@NonNull String cacheKey) {
+            return Mono.defer(() -> Mono.just(true)
+                            .delayElement(Duration.ofSeconds(1)))
+                    .then();
+        }
     }
 }
