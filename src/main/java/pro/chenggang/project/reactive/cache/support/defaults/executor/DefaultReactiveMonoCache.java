@@ -10,7 +10,6 @@ import pro.chenggang.project.reactive.cache.support.exception.NoSuchCachedReacti
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The default reactive mono cache
@@ -133,7 +132,6 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
 
     @Override
     public Mono<Void> evictCache(@NonNull String cacheKey) {
-        final AtomicBoolean alreadyReleaseFlag = new AtomicBoolean(false);
         return Mono.usingWhen(
                 this.reactiveCacheLock.tryLockInitializeLock(cacheName,
                         cacheKey,
@@ -143,53 +141,40 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                         .filter(Boolean::booleanValue)
                         .flatMap(hasData -> reactiveCacheMonoAdapter.cleanupData(cacheKey))
                 ,
-                currentOperationId -> {
-                    if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                        return this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
-                                .doOnNext(operationId -> log.debug(
-                                        "[Reactive Cache](Cleanup)Release initialization lock, CacheName:{}, CacheKey:{}, " +
-                                                "ReleasedOperationId:{}, CurrentOperationId:{}",
-                                        cacheName,
-                                        cacheKey,
-                                        operationId,
-                                        currentOperationId
-                                ))
-                                .then();
-                    }
-                    return Mono.empty();
-                },
-                (currentOperationId, throwable) -> {
-                    if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                        return this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
-                                .doOnNext(operationId -> log.debug(
-                                        "[Reactive Cache](Cleanup)Release initialization lock on Error, " +
-                                                "CacheName:{}, CacheKey:{}, " +
-                                                "ReleasedOperationId:{}, CurrentOperationId:{}",
-                                        cacheName,
-                                        cacheKey,
-                                        operationId,
-                                        currentOperationId
-                                ))
-                                .then(Mono.error(throwable));
-                    }
-                    return Mono.error(throwable);
-                },
-                (currentOperationId) -> {
-                    if (alreadyReleaseFlag.compareAndSet(false, true)) {
-                        return this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
-                                .doOnNext(operationId -> log.debug(
-                                        "[Reactive Cache](Cleanup)Release initialization lock, " +
-                                                "CacheName:{}, CacheKey:{}, " +
-                                                "ReleasedOperationId:{}, CurrentOperationId:{}",
-                                        cacheName,
-                                        cacheKey,
-                                        operationId,
-                                        currentOperationId
-                                ))
-                                .then();
-                    }
-                    return Mono.empty();
-                }
+                currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                        .doOnNext(operationId -> log.debug(
+                                "[Reactive Cache](Cleanup)Release initialization lock, CacheName:{}, CacheKey:{}, " +
+                                        "ReleasedOperationId:{}, CurrentOperationId:{}",
+                                cacheName,
+                                cacheKey,
+                                operationId,
+                                currentOperationId
+                        ))
+                        .then()
+                ,
+                (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                        .doOnNext(operationId -> log.debug(
+                                "[Reactive Cache](Cleanup)Release initialization lock on Error, " +
+                                        "CacheName:{}, CacheKey:{}, " +
+                                        "ReleasedOperationId:{}, CurrentOperationId:{}",
+                                cacheName,
+                                cacheKey,
+                                operationId,
+                                currentOperationId
+                        ))
+                        .then(Mono.error(throwable))
+                ,
+                (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                        .doOnNext(operationId -> log.debug(
+                                "[Reactive Cache](Cleanup)Release initialization lock, " +
+                                        "CacheName:{}, CacheKey:{}, " +
+                                        "ReleasedOperationId:{}, CurrentOperationId:{}",
+                                cacheName,
+                                cacheKey,
+                                operationId,
+                                currentOperationId
+                        ))
+                        .then()
         );
     }
 }
