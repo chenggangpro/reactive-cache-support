@@ -59,6 +59,7 @@ ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCusto
     cache:
       enabled: true
       type: inmemory
+      maxWaitingDuration: PT5S
   ```
   
   * Using with spring auto-injection

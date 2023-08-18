@@ -2,3 +2,4 @@ reactive:
   cache:
     enabled: true
     type: inmemory
+    maxWaitingDuration: PT5S

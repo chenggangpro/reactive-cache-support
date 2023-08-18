@@ -93,7 +93,7 @@ public class RedisConfigurationTests {
                 ReactiveCacheSupportProperties.ReactiveCacheType.redis
         );
         Assertions.assertEquals(reactiveCacheSupportProperties.getMaxWaitingDuration(),
-                Duration.ofSeconds(3)
+                Duration.ofSeconds(5)
         );
     }
 
