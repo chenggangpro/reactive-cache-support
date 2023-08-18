@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+    <property scope="context" name="log_dir" value="./logs" />
+    <property scope="context" name="app_name" value="reactive-cache-support"/>
+    <!-- 彩色日志格式 -->
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } [%-20.20t{19}] [%-50.50logger{49}:%line] %m%n"/>
+    <property name="CONSOLE_LOG_PATTERN" value="${CONSOLE_LOG_PATTERN:-%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr([%-20.20t{19}]){faint} %clr([%-50.50logger{49}:%line]){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}" />
+    <!-- 彩色日志 -->
+    <!-- 彩色日志依赖的渲染类 -->
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+    <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
+    <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>  
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>  
+    </appender>
+
+    <logger name="de.codecentric" level="INFO"/>
+    <logger name="org.apache.http" level="INFO"/>
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.testcontainers" level="ERROR" />
+
+    <!-- 日志输出级别 -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration> 

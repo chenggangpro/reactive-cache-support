@@ -1,9 +1,11 @@
-package pro.chenggang.project.reactive.cache.support.defaults.executor;
+package pro.chenggang.project.reactive.cache.support.defaults.executor.redis;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import pro.chenggang.project.reactive.cache.support.BaseTest;
-import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheFluxAdapter;
-import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheLock;
+import pro.chenggang.project.reactive.cache.support.defaults.executor.DefaultReactiveFluxCache;
+import pro.chenggang.project.reactive.cache.support.defaults.redis.BaseTestWithRedis;
+import pro.chenggang.project.reactive.cache.support.defaults.redis.RedisReactiveCacheFluxAdapter;
+import pro.chenggang.project.reactive.cache.support.defaults.redis.RedisReactiveCacheLock;
 import pro.chenggang.project.reactive.cache.support.exception.NoSuchCachedReactiveDataException;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
@@ -15,13 +17,18 @@ import java.time.Duration;
  * @version 1.0.0
  * @since 1.0.0
  */
-class DefaultReactiveFluxCacheTest extends BaseTest {
+class RedisDefaultReactiveFluxCacheTest extends BaseTestWithRedis {
 
-    DefaultReactiveFluxCache defaultReactiveFluxCache = new DefaultReactiveFluxCache(cacheName,
-            maxWaitingDuration,
-            new InmemoryReactiveCacheLock(),
-            new InmemoryReactiveCacheFluxAdapter()
-    );
+    DefaultReactiveFluxCache defaultReactiveFluxCache;
+
+    @BeforeEach
+    void beforeEach() {
+        defaultReactiveFluxCache = new DefaultReactiveFluxCache(cacheName,
+                maxWaitingDuration,
+                new RedisReactiveCacheLock(reactiveRedisTemplate),
+                new RedisReactiveCacheFluxAdapter(reactiveRedisTemplate)
+        );
+    }
 
     @Test
     void get() {
@@ -40,6 +47,19 @@ class DefaultReactiveFluxCacheTest extends BaseTest {
                 .expectNext(2)
                 .verifyComplete();
 
+    }
+
+    @Test
+    void cacheIfNecessaryWithCancel() {
+        defaultReactiveFluxCache.cacheIfNecessary(cacheKey,
+                        Duration.ofSeconds(3),
+                        Flux.range(0, 3)
+                                .delaySequence(Duration.ofSeconds(200))
+                )
+                .as(StepVerifier::create)
+                .thenAwait(Duration.ofMillis(300))
+                .thenCancel()
+                .verify();
     }
 
     @Test
