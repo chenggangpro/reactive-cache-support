@@ -3,7 +3,6 @@ package pro.chenggang.project.reactive.cache.support.core.builder;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import pro.chenggang.project.reactive.cache.support.core.ReactiveCacheLock;
 import pro.chenggang.project.reactive.cache.support.core.ReactiveCacheManager;
@@ -158,18 +157,6 @@ public abstract class ReactiveCacheManagerBuilder {
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
     public static class InmemoryReactiveManagerBuilder extends BaseReactiveManagerBuilder<InmemoryReactiveManagerBuilder> {
 
-        private InmemoryReactiveCacheLock inmemoryReactiveCacheLock;
-
-        /**
-         * With inmemory reactive cache lock.
-         *
-         * @return the inmemory reactive manager builder
-         */
-        public InmemoryReactiveManagerBuilder withInmemoryReactiveCacheLock() {
-            inmemoryReactiveCacheLock = new InmemoryReactiveCacheLock();
-            return this;
-        }
-
         @Override
         public InmemoryReactiveManagerBuilder self() {
             return this;
@@ -178,7 +165,7 @@ public abstract class ReactiveCacheManagerBuilder {
         @Override
         public ReactiveCacheManager build() {
             return new DefaultReactiveCacheManager(new InmemoryReactiveCacheManagerAdapter(maxWaitingDuration,
-                    inmemoryReactiveCacheLock
+                    new InmemoryReactiveCacheLock()
             ));
         }
     }
@@ -186,21 +173,16 @@ public abstract class ReactiveCacheManagerBuilder {
     /**
      * The redis reactive manager builder.
      */
-    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public static class RedisReactiveManagerBuilder extends BaseReactiveManagerBuilder<RedisReactiveManagerBuilder> {
 
         @NonNull
         private final ReactiveRedisTemplate<String, Object> reactiveRedisTemplate;
-        private RedisReactiveCacheLock redisReactiveCacheLock;
+        @NonNull
+        private final RedisReactiveCacheLock redisReactiveCacheLock;
 
-        /**
-         * With redis reactive cache lock.
-         *
-         * @return the redis reactive manager builder
-         */
-        public RedisReactiveManagerBuilder withRedisReactiveCacheLock() {
-            redisReactiveCacheLock = new RedisReactiveCacheLock(reactiveRedisTemplate);
-            return this;
+        private RedisReactiveManagerBuilder(@NonNull ReactiveRedisTemplate<String, Object> reactiveRedisTemplate) {
+            this.reactiveRedisTemplate = reactiveRedisTemplate;
+            this.redisReactiveCacheLock = new RedisReactiveCacheLock(reactiveRedisTemplate);
         }
 
         @Override
