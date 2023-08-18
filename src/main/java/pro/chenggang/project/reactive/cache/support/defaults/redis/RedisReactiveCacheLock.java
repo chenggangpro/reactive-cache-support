@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 @RequiredArgsConstructor
 public class RedisReactiveCacheLock implements ReactiveCacheLock {
 
-    private final ReactiveRedisTemplate<String, String> reactiveRedisTemplate;
+    private final ReactiveRedisTemplate<String, Object> reactiveRedisTemplate;
 
     @Override
     public Mono<Void> checkInitializeLock(@NonNull String cacheName,
@@ -108,6 +108,7 @@ public class RedisReactiveCacheLock implements ReactiveCacheLock {
         final String cacheInitializeLockKey = decorateCacheInitializeLockKey(cacheName, cacheKey);
         return reactiveRedisTemplate.opsForList()
                 .rightPop(cacheInitializeLockKey)
+                .cast(String.class)
                 .doOnNext(operationId -> log.debug(
                         "[Redis reactive cache initialize lock](Release initialization lock): " +
                                 "CacheName: {}, CacheKey: {},LockedOperationId: {}",
