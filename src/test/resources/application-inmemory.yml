@@ -1,0 +1,4 @@
+reactive:
+  cache:
+    enabled: true
+    type: inmemory

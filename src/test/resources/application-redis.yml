@@ -1,0 +1,14 @@
+reactive:
+  cache:
+    enabled: true
+    type: redis
+spring:
+  redis:
+    lettuce:
+      pool:
+        max-active: ${redis.pool.maxActive:100}
+        max-idle: ${redis.pool.maxIdle:10}
+        max-wait: ${redis.pool.maxWait:5000}
+        min-idle: ${redis.pool.minIdle:3}
+        time-between-eviction-runs: ${redis.pool.timeBetweenEviction:5000}
+      shutdown-timeout: PT30S
