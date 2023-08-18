@@ -162,7 +162,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                                 operationId,
                                 currentOperationId
                         ))
-                        .then(Mono.error(throwable))
+                        .then()
                 ,
                 (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                         .doOnNext(operationId -> log.debug(

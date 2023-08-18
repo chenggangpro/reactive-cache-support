@@ -163,7 +163,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                                 operationId,
                                 currentOperationId
                         ))
-                        .then(Mono.error(throwable))
+                        .then()
                 ,
                 (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                         .doOnNext(operationId -> log.debug(
