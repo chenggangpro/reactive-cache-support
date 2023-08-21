@@ -35,7 +35,7 @@ public class InmemoryConfigurationTests {
                 ReactiveCacheSupportProperties.ReactiveCacheType.inmemory
         );
         Assertions.assertEquals(reactiveCacheSupportProperties.getMaxWaitingDuration(),
-                Duration.ofSeconds(3)
+                Duration.ofSeconds(5)
         );
     }
 
