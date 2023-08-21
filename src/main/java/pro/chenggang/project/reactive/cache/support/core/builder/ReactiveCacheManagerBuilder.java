@@ -28,48 +28,48 @@ import java.time.Duration;
 public abstract class ReactiveCacheManagerBuilder {
 
     /**
-     * New inmemory reactive manager builder.
+     * New inmemory reactive cache manager builder.
      *
-     * @return the inmemory reactive manager builder
+     * @return the inmemory reactive cache manager builder
      */
-    public static InmemoryReactiveManagerBuilder newInmemoryReactiveManagerBuilder() {
-        return new InmemoryReactiveManagerBuilder();
+    public static InmemoryReactiveCacheManagerBuilder newInmemoryReactiveCacheManagerBuilder() {
+        return new InmemoryReactiveCacheManagerBuilder();
     }
 
     /**
-     * New caffeine reactive manager builder.
+     * New caffeine reactive cache manager builder.
      *
-     * @return the caffeine reactive manager builder
+     * @return the caffeine reactive cache manager builder
      */
-    public static CaffeineReactiveManagerBuilder newCaffeineReactiveManagerBuilder() {
-        return new CaffeineReactiveManagerBuilder();
+    public static CaffeineReactiveCacheManagerBuilder newCaffeineReactiveCacheManagerBuilder() {
+        return new CaffeineReactiveCacheManagerBuilder();
     }
 
     /**
-     * New redis reactive manager builder.
+     * New redis reactive cache manager builder.
      *
      * @param reactiveRedisTemplate the reactive redis template
-     * @return the redis reactive manager builder
+     * @return the redis reactive cache manager builder
      */
-    public static RedisReactiveManagerBuilder newRedisReactiveManagerBuilder(@NonNull ReactiveRedisTemplate<String, Object> reactiveRedisTemplate) {
-        return new RedisReactiveManagerBuilder(reactiveRedisTemplate);
+    public static RedisReactiveCacheManagerBuilder newRedisReactiveCacheManagerBuilder(@NonNull ReactiveRedisTemplate<String, Object> reactiveRedisTemplate) {
+        return new RedisReactiveCacheManagerBuilder(reactiveRedisTemplate);
     }
 
     /**
-     * New custom reactive manager builder.
+     * New custom reactive cache manager builder.
      *
-     * @return the custom reactive manager builder
+     * @return the custom reactive cache manager builder
      */
-    public static CustomReactiveManagerBuilder newCustomReactiveManagerBuilder() {
-        return new CustomReactiveManagerBuilder();
+    public static CustomReactiveCacheManagerBuilder newCustomReactiveCacheManagerBuilder() {
+        return new CustomReactiveCacheManagerBuilder();
     }
 
     /**
-     * The base reactive manager builder.
+     * The base reactive cache manager builder.
      *
      * @param <B> the BaseReactiveManagerBuilder type
      */
-    protected abstract static class BaseReactiveManagerBuilder<B extends BaseReactiveManagerBuilder<B>> {
+    protected abstract static class BaseReactiveCacheManagerBuilder<B extends BaseReactiveCacheManagerBuilder<B>> {
 
         /**
          * The Max waiting duration.
@@ -103,10 +103,10 @@ public abstract class ReactiveCacheManagerBuilder {
     }
 
     /**
-     * The custom reactive manager builder.
+     * The custom reactive cache manager builder.
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class CustomReactiveManagerBuilder extends BaseReactiveManagerBuilder<CustomReactiveManagerBuilder> {
+    public static class CustomReactiveCacheManagerBuilder extends BaseReactiveCacheManagerBuilder<CustomReactiveCacheManagerBuilder> {
 
         private ReactiveCacheLock reactiveCacheLock;
         private ReactiveCacheMonoAdapter reactiveCacheMonoAdapter;
@@ -118,7 +118,7 @@ public abstract class ReactiveCacheManagerBuilder {
          * @param reactiveCacheLock the reactive cache lock
          * @return the custom reactive manager builder
          */
-        public CustomReactiveManagerBuilder withReactiveCacheLock(@NonNull ReactiveCacheLock reactiveCacheLock) {
+        public CustomReactiveCacheManagerBuilder withReactiveCacheLock(@NonNull ReactiveCacheLock reactiveCacheLock) {
             this.reactiveCacheLock = reactiveCacheLock;
             return this;
         }
@@ -129,7 +129,7 @@ public abstract class ReactiveCacheManagerBuilder {
          * @param reactiveCacheMonoAdapter the reactive cache mono adapter
          * @return the custom reactive manager builder
          */
-        public CustomReactiveManagerBuilder withReactiveCacheMonoAdapter(@NonNull ReactiveCacheMonoAdapter reactiveCacheMonoAdapter) {
+        public CustomReactiveCacheManagerBuilder withReactiveCacheMonoAdapter(@NonNull ReactiveCacheMonoAdapter reactiveCacheMonoAdapter) {
             this.reactiveCacheMonoAdapter = reactiveCacheMonoAdapter;
             return this;
         }
@@ -140,13 +140,13 @@ public abstract class ReactiveCacheManagerBuilder {
          * @param reactiveCacheFluxAdapter the reactive cache flux adapter
          * @return the custom reactive manager builder
          */
-        public CustomReactiveManagerBuilder withReactiveCacheFluxAdapter(@NonNull ReactiveCacheFluxAdapter reactiveCacheFluxAdapter) {
+        public CustomReactiveCacheManagerBuilder withReactiveCacheFluxAdapter(@NonNull ReactiveCacheFluxAdapter reactiveCacheFluxAdapter) {
             this.reactiveCacheFluxAdapter = reactiveCacheFluxAdapter;
             return this;
         }
 
         @Override
-        public CustomReactiveManagerBuilder self() {
+        public CustomReactiveCacheManagerBuilder self() {
             return this;
         }
 
@@ -162,13 +162,13 @@ public abstract class ReactiveCacheManagerBuilder {
 
 
     /**
-     * The inmemory reactive manager builder.
+     * The inmemory reactive cache manager builder.
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class InmemoryReactiveManagerBuilder extends BaseReactiveManagerBuilder<InmemoryReactiveManagerBuilder> {
+    public static class InmemoryReactiveCacheManagerBuilder extends BaseReactiveCacheManagerBuilder<InmemoryReactiveCacheManagerBuilder> {
 
         @Override
-        public InmemoryReactiveManagerBuilder self() {
+        public InmemoryReactiveCacheManagerBuilder self() {
             return this;
         }
 
@@ -181,13 +181,13 @@ public abstract class ReactiveCacheManagerBuilder {
     }
 
     /**
-     * The caffeine reactive manager builder.
+     * The caffeine reactive cache manager builder.
      */
     @NoArgsConstructor(access = AccessLevel.PRIVATE)
-    public static class CaffeineReactiveManagerBuilder extends BaseReactiveManagerBuilder<CaffeineReactiveManagerBuilder> {
+    public static class CaffeineReactiveCacheManagerBuilder extends BaseReactiveCacheManagerBuilder<CaffeineReactiveCacheManagerBuilder> {
 
         @Override
-        public CaffeineReactiveManagerBuilder self() {
+        public CaffeineReactiveCacheManagerBuilder self() {
             return this;
         }
 
@@ -200,22 +200,22 @@ public abstract class ReactiveCacheManagerBuilder {
     }
 
     /**
-     * The redis reactive manager builder.
+     * The redis reactive cache manager builder.
      */
-    public static class RedisReactiveManagerBuilder extends BaseReactiveManagerBuilder<RedisReactiveManagerBuilder> {
+    public static class RedisReactiveCacheManagerBuilder extends BaseReactiveCacheManagerBuilder<RedisReactiveCacheManagerBuilder> {
 
         @NonNull
         private final ReactiveRedisTemplate<String, Object> reactiveRedisTemplate;
         @NonNull
         private final RedisReactiveCacheLock redisReactiveCacheLock;
 
-        private RedisReactiveManagerBuilder(@NonNull ReactiveRedisTemplate<String, Object> reactiveRedisTemplate) {
+        private RedisReactiveCacheManagerBuilder(@NonNull ReactiveRedisTemplate<String, Object> reactiveRedisTemplate) {
             this.reactiveRedisTemplate = reactiveRedisTemplate;
             this.redisReactiveCacheLock = new RedisReactiveCacheLock(reactiveRedisTemplate);
         }
 
         @Override
-        public RedisReactiveManagerBuilder self() {
+        public RedisReactiveCacheManagerBuilder self() {
             return this;
         }
 

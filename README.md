@@ -23,7 +23,7 @@
 > InmemoryReactiveCache
 
 ```java
-ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder()
+ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmemoryReactiveCacheManagerBuilder()
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
                 .build();
 ```
@@ -31,7 +31,7 @@ ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmem
 > CaffeineReactiveCache
 
 ```java
-ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCaffeineReactiveManagerBuilder()
+ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCaffeineReactiveCacheManagerBuilder()
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
                 .build();
 ```
@@ -40,7 +40,7 @@ ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCaffe
 > RedisReactiveCache
 
 ```java
-ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newRedisReactiveManagerBuilder(
+ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newRedisReactiveCacheManagerBuilder(
                         reactiveRedisTemplate)
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
                 .build();
@@ -49,7 +49,7 @@ ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newRedis
 > Customized ReactiveCache
 
 ```java
-ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCustomReactiveManagerBuilder()
+ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCustomReactiveCacheManagerBuilder()
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
                 // Customized ReactiveCacheLock instance implemented interface ReactiveCacheLock
                 .withReactiveCacheLock()
