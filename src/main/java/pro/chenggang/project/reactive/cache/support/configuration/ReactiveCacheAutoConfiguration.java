@@ -42,7 +42,16 @@ public class ReactiveCacheAutoConfiguration {
     @ConditionalOnMissingBean(ReactiveCacheManager.class)
     @Bean
     public ReactiveCacheManager inmemoryReactiveCacheManager(ReactiveCacheSupportProperties reactiveCacheSupportProperties) {
-        return ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder()
+        return ReactiveCacheManagerBuilder.newInmemoryReactiveCacheManagerBuilder()
+                .withMaxWaitingDuration(reactiveCacheSupportProperties.getMaxWaitingDuration())
+                .build();
+    }
+
+    @ConditionalOnProperty(prefix = PREFIX, value = "type", havingValue = "caffeine")
+    @ConditionalOnMissingBean(ReactiveCacheManager.class)
+    @Bean
+    public ReactiveCacheManager caffeineReactiveCacheManager(ReactiveCacheSupportProperties reactiveCacheSupportProperties) {
+        return ReactiveCacheManagerBuilder.newCaffeineReactiveCacheManagerBuilder()
                 .withMaxWaitingDuration(reactiveCacheSupportProperties.getMaxWaitingDuration())
                 .build();
     }
@@ -63,7 +72,7 @@ public class ReactiveCacheAutoConfiguration {
     @Bean
     public ReactiveCacheManager redisReactiveCacheManager(ReactiveCacheSupportProperties reactiveCacheSupportProperties,
                                                           ReactiveRedisTemplate reactiveRedisTemplate) {
-        return ReactiveCacheManagerBuilder.newRedisReactiveManagerBuilder(reactiveRedisTemplate)
+        return ReactiveCacheManagerBuilder.newRedisReactiveCacheManagerBuilder(reactiveRedisTemplate)
                 .withMaxWaitingDuration(reactiveCacheSupportProperties.getMaxWaitingDuration())
                 .build();
     }

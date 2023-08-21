@@ -12,10 +12,10 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import pro.chenggang.project.reactive.cache.support.core.ReactiveCacheManager;
-import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.CaffeineReactiveManagerBuilder;
-import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.CustomReactiveManagerBuilder;
-import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.InmemoryReactiveManagerBuilder;
-import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.RedisReactiveManagerBuilder;
+import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.CaffeineReactiveCacheManagerBuilder;
+import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.CustomReactiveCacheManagerBuilder;
+import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.InmemoryReactiveCacheManagerBuilder;
+import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.RedisReactiveCacheManagerBuilder;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheFluxAdapter;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheLock;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheMonoAdapter;
@@ -51,42 +51,42 @@ class ReactiveCacheManagerBuilderTest {
     }
 
     @Test
-    void newInmemoryReactiveManagerBuilder() {
-        InmemoryReactiveManagerBuilder inmemoryReactiveManagerBuilder = ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder();
+    void newInmemoryReactiveCacheManagerBuilder() {
+        InmemoryReactiveCacheManagerBuilder inmemoryReactiveManagerBuilder = ReactiveCacheManagerBuilder.newInmemoryReactiveCacheManagerBuilder();
         Assertions.assertNotNull(inmemoryReactiveManagerBuilder);
     }
 
     @Test
-    void newCaffeineReactiveManagerBuilder() {
-        CaffeineReactiveManagerBuilder caffeineReactiveManagerBuilder = ReactiveCacheManagerBuilder.newCaffeineReactiveManagerBuilder();
+    void newCaffeineReactiveCacheManagerBuilder() {
+        CaffeineReactiveCacheManagerBuilder caffeineReactiveManagerBuilder = ReactiveCacheManagerBuilder.newCaffeineReactiveCacheManagerBuilder();
         Assertions.assertNotNull(caffeineReactiveManagerBuilder);
     }
 
     @Test
-    void newRedisReactiveManagerBuilder() {
-        RedisReactiveManagerBuilder redisReactiveManagerBuilder = ReactiveCacheManagerBuilder.newRedisReactiveManagerBuilder(
+    void newRedisReactiveCacheManagerBuilder() {
+        RedisReactiveCacheManagerBuilder redisReactiveManagerBuilder = ReactiveCacheManagerBuilder.newRedisReactiveCacheManagerBuilder(
                 reactiveRedisTemplate
         );
         Assertions.assertNotNull(redisReactiveManagerBuilder);
     }
 
     @Test
-    void newCustomReactiveManagerBuilder() {
-        CustomReactiveManagerBuilder customReactiveManagerBuilder = ReactiveCacheManagerBuilder.newCustomReactiveManagerBuilder();
+    void newCustomReactiveCacheManagerBuilder() {
+        CustomReactiveCacheManagerBuilder customReactiveManagerBuilder = ReactiveCacheManagerBuilder.newCustomReactiveCacheManagerBuilder();
         Assertions.assertNotNull(customReactiveManagerBuilder);
     }
 
     @Test
-    void testNewInmemoryReactiveManagerBuilder() {
-        ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder()
+    void testNewInmemoryReactiveCacheManagerBuilder() {
+        ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmemoryReactiveCacheManagerBuilder()
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
                 .build();
         Assertions.assertNotNull(reactiveCacheManager);
     }
 
     @Test
-    void testNewRedisReactiveManagerBuilder() {
-        ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newRedisReactiveManagerBuilder(
+    void testNewRedisReactiveCacheManagerBuilder() {
+        ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newRedisReactiveCacheManagerBuilder(
                         reactiveRedisTemplate)
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
                 .build();
@@ -94,8 +94,8 @@ class ReactiveCacheManagerBuilderTest {
     }
 
     @Test
-    void testNewCustomReactiveManagerBuilder() {
-        ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCustomReactiveManagerBuilder()
+    void testNewCustomReactiveCacheManagerBuilder() {
+        ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCustomReactiveCacheManagerBuilder()
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
                 .withReactiveCacheLock(new InmemoryReactiveCacheLock())
                 .withReactiveCacheMonoAdapter(new InmemoryReactiveCacheMonoAdapter())
