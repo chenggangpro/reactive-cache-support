@@ -2,11 +2,15 @@ package pro.chenggang.project.reactive.cache.support.toolkit;
 
 import lombok.Getter;
 import lombok.NonNull;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -26,19 +30,6 @@ public class AutoExpiredDataCache<T> {
     private final AtomicBoolean startFlag = new AtomicBoolean(false);
     private final Map<String, AutoExpiredDataWrapper<T>> cachedDataContainer = new ConcurrentHashMap<>();
     private final DelayQueue<AutoExpiredDataWrapper<T>> delayQueue = new DelayQueue<>();
-    private final Thread daemonThread = new Thread(() -> {
-        while (startFlag.get()) {
-            AutoExpiredDataWrapper<T> data = delayQueue.poll();
-            if (Objects.nonNull(data) && cachedDataContainer.containsKey(data.getDataKey())) {
-                cachedDataContainer.remove(data.getDataKey(), data);
-            }
-            try {
-                TimeUnit.MILLISECONDS.sleep(100);
-            } catch (InterruptedException e) {
-                //ignore
-            }
-        }
-    });
 
     /**
      * New instance of auto expired data cache.
@@ -55,6 +46,24 @@ public class AutoExpiredDataCache<T> {
      */
     protected AutoExpiredDataCache() {
         startup();
+    }
+
+    protected void startup() {
+        if (startFlag.compareAndSet(false, true)) {
+            Flux.interval(Duration.ofMillis(100))
+                    .flatMap(__ -> Mono.fromFuture(CompletableFuture.runAsync(() -> {
+                        AutoExpiredDataWrapper<T> data = delayQueue.poll();
+                        if (Objects.nonNull(data) && cachedDataContainer.containsKey(data.getDataKey())) {
+                            cachedDataContainer.remove(data.getDataKey(), data);
+                        }
+                    })))
+                    .subscribeOn(Schedulers.newSingle(r -> {
+                        Thread daemonThread = new Thread(r, "cache-daemon-");
+                        daemonThread.setDaemon(true);
+                        return daemonThread;
+                    }))
+                    .subscribe();
+        }
     }
 
     /**
@@ -122,13 +131,6 @@ public class AutoExpiredDataCache<T> {
         AutoExpiredDataWrapper<T> autoExpiredDataWrapper = this.cachedDataContainer.get(dataKey);
         autoExpiredDataWrapper.terminate();
         cachedDataContainer.remove(dataKey);
-    }
-
-    protected void startup() {
-        if (startFlag.compareAndSet(false, true)) {
-            daemonThread.setDaemon(true);
-            daemonThread.start();
-        }
     }
 
     /**

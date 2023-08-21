@@ -11,9 +11,10 @@
 * This project is compatible with `reactivestream` aka [`project-reactor`](https://projectreactor.io/)
 * This project could integrate with `Spring Framework` (version>= 2.x)
 * This project implement reactive cache for business application scenarios. The default implementation includes the following:
-  * `InmemeoryReactiveCache` uses `java.util.DelayQueue` to implement cache behavior 
-  * `RedisReactiveCache` uses `redis` and `spring-boot-redis` to implement cache behavior
-  * `DefaultReactiveCache` uses customized configuration to implement cache behavior
+  * `InmemeoryReactiveCache` uses `java.util.concurrent.DelayQueue` to implement cache behavior
+  * `CaffeineReactiveCache` uses `com.github.benmanes.caffeine.cache.Cache` to implement cache behavior
+  * `RedisReactiveCache` uses `redis` and `spring-boot-data-redis` to implement cache behavior
+  * `DefaultReactiveCache` uses customized configuration which specific configured by uses to implement cache behavior
 
 #### Usage
 
@@ -26,6 +27,15 @@ ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newInmem
                 .withMaxWaitingDuration(Duration.ofSeconds(5))
                 .build();
 ```
+
+> CaffeineReactiveCache
+
+```java
+ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCaffeineReactiveManagerBuilder()
+                .withMaxWaitingDuration(Duration.ofSeconds(5))
+                .build();
+```
+
 
 > RedisReactiveCache
 

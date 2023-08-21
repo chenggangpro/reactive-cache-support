@@ -1,9 +1,9 @@
 package pro.chenggang.project.reactive.cache.support.configuration.properties;
 
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 
+import javax.validation.constraints.NotNull;
 import java.time.Duration;
 
 /**
@@ -24,17 +24,17 @@ public class ReactiveCacheSupportProperties {
     /**
      * The max waiting duration
      */
-    @NonNull
+    @NotNull(message = "Max waiting duration cloud not be null")
     private Duration maxWaitingDuration = Duration.ofSeconds(3);
 
     /**
      * The reactive cache type
      */
-    @NonNull
-    private ReactiveCacheType type = ReactiveCacheType.inmemory;
+    @NotNull(message = "Reactive cache type could not be null")
+    private ReactiveCacheType type;
 
     /**
-     * The reactive cache type
+     * The reactive cache type enum
      */
     public enum ReactiveCacheType {
 
@@ -42,6 +42,11 @@ public class ReactiveCacheSupportProperties {
          * The inmemory reactive cache type
          */
         inmemory,
+
+        /**
+         * The caffeine reactive cache type
+         */
+        caffeine,
 
         /**
          * The redis reactive cache type

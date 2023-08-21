@@ -1,6 +1,7 @@
 package pro.chenggang.project.reactive.cache.support.configuration;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -28,6 +29,7 @@ import static pro.chenggang.project.reactive.cache.support.configuration.propert
 @ConditionalOnClass({Flux.class, Mono.class})
 @AutoConfiguration
 @Configuration
+@EnableAutoConfiguration
 public class ReactiveCacheAutoConfiguration {
 
     @ConfigurationProperties(prefix = PREFIX)
@@ -41,6 +43,15 @@ public class ReactiveCacheAutoConfiguration {
     @Bean
     public ReactiveCacheManager inmemoryReactiveCacheManager(ReactiveCacheSupportProperties reactiveCacheSupportProperties) {
         return ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder()
+                .withMaxWaitingDuration(reactiveCacheSupportProperties.getMaxWaitingDuration())
+                .build();
+    }
+
+    @ConditionalOnProperty(prefix = PREFIX, value = "type", havingValue = "caffeine")
+    @ConditionalOnMissingBean(ReactiveCacheManager.class)
+    @Bean
+    public ReactiveCacheManager caffeineReactiveCacheManager(ReactiveCacheSupportProperties reactiveCacheSupportProperties) {
+        return ReactiveCacheManagerBuilder.newCaffeineReactiveManagerBuilder()
                 .withMaxWaitingDuration(reactiveCacheSupportProperties.getMaxWaitingDuration())
                 .build();
     }

@@ -10,6 +10,7 @@ import pro.chenggang.project.reactive.cache.support.core.adapter.ReactiveCacheFl
 import pro.chenggang.project.reactive.cache.support.core.adapter.ReactiveCacheMonoAdapter;
 import pro.chenggang.project.reactive.cache.support.defaults.DefaultReactiveCacheManager;
 import pro.chenggang.project.reactive.cache.support.defaults.DefaultReactiveCacheManagerAdapter;
+import pro.chenggang.project.reactive.cache.support.defaults.caffeine.CaffeineReactiveCacheManagerAdapter;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheLock;
 import pro.chenggang.project.reactive.cache.support.defaults.inmemory.InmemoryReactiveCacheManagerAdapter;
 import pro.chenggang.project.reactive.cache.support.defaults.redis.RedisReactiveCacheLock;
@@ -33,6 +34,15 @@ public abstract class ReactiveCacheManagerBuilder {
      */
     public static InmemoryReactiveManagerBuilder newInmemoryReactiveManagerBuilder() {
         return new InmemoryReactiveManagerBuilder();
+    }
+
+    /**
+     * New caffeine reactive manager builder.
+     *
+     * @return the caffeine reactive manager builder
+     */
+    public static CaffeineReactiveManagerBuilder newCaffeineReactiveManagerBuilder() {
+        return new CaffeineReactiveManagerBuilder();
     }
 
     /**
@@ -165,6 +175,25 @@ public abstract class ReactiveCacheManagerBuilder {
         @Override
         public ReactiveCacheManager build() {
             return new DefaultReactiveCacheManager(new InmemoryReactiveCacheManagerAdapter(maxWaitingDuration,
+                    new InmemoryReactiveCacheLock()
+            ));
+        }
+    }
+
+    /**
+     * The caffeine reactive manager builder.
+     */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class CaffeineReactiveManagerBuilder extends BaseReactiveManagerBuilder<CaffeineReactiveManagerBuilder> {
+
+        @Override
+        public CaffeineReactiveManagerBuilder self() {
+            return this;
+        }
+
+        @Override
+        public ReactiveCacheManager build() {
+            return new DefaultReactiveCacheManager(new CaffeineReactiveCacheManagerAdapter(maxWaitingDuration,
                     new InmemoryReactiveCacheLock()
             ));
         }

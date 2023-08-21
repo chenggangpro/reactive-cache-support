@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -18,10 +19,10 @@ import java.time.Duration;
  * @since 1.0.0
  */
 @SpringBootTest
-@ActiveProfiles("inmemory")
-@TestPropertySource(locations = "classpath:application-inmemory.yml")
+@ActiveProfiles("caffeine")
+@TestPropertySource(locations = "classpath:application-caffeine.yml")
 @ContextConfiguration(classes = ReactiveCacheAutoConfiguration.class)
-public class InmemoryConfigurationTests {
+public class CaffeineConfigurationTests {
 
     @Autowired
     ReactiveCacheSupportProperties reactiveCacheSupportProperties;
@@ -29,10 +30,13 @@ public class InmemoryConfigurationTests {
     @Autowired
     ReactiveCacheManager reactiveCacheManager;
 
+    @Autowired
+    Environment environment;
+
     @Test
     public void testProperties() {
         Assertions.assertEquals(reactiveCacheSupportProperties.getType(),
-                ReactiveCacheSupportProperties.ReactiveCacheType.inmemory
+                ReactiveCacheSupportProperties.ReactiveCacheType.caffeine
         );
         Assertions.assertEquals(reactiveCacheSupportProperties.getMaxWaitingDuration(),
                 Duration.ofSeconds(5)
@@ -40,7 +44,7 @@ public class InmemoryConfigurationTests {
     }
 
     @Test
-    public void testInmemoryReactiveCacheManagerConfiguration() {
+    public void testCaffeineReactiveCacheManagerConfiguration() {
         Assertions.assertNotNull(reactiveCacheManager);
     }
 }
