@@ -1,0 +1,5 @@
+reactive:
+  cache:
+    enabled: true
+    type: caffeine
+    maxWaitingDuration: PT5S

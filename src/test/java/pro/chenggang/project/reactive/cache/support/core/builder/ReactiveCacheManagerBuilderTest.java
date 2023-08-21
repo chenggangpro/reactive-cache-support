@@ -12,6 +12,7 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import pro.chenggang.project.reactive.cache.support.core.ReactiveCacheManager;
+import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.CaffeineReactiveManagerBuilder;
 import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.CustomReactiveManagerBuilder;
 import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.InmemoryReactiveManagerBuilder;
 import pro.chenggang.project.reactive.cache.support.core.builder.ReactiveCacheManagerBuilder.RedisReactiveManagerBuilder;
@@ -53,6 +54,12 @@ class ReactiveCacheManagerBuilderTest {
     void newInmemoryReactiveManagerBuilder() {
         InmemoryReactiveManagerBuilder inmemoryReactiveManagerBuilder = ReactiveCacheManagerBuilder.newInmemoryReactiveManagerBuilder();
         Assertions.assertNotNull(inmemoryReactiveManagerBuilder);
+    }
+
+    @Test
+    void newCaffeineReactiveManagerBuilder() {
+        CaffeineReactiveManagerBuilder caffeineReactiveManagerBuilder = ReactiveCacheManagerBuilder.newCaffeineReactiveManagerBuilder();
+        Assertions.assertNotNull(caffeineReactiveManagerBuilder);
     }
 
     @Test
