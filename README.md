@@ -90,6 +90,96 @@ ReactiveCacheManager reactiveCacheManager = ReactiveCacheManagerBuilder.newCusto
   ReactiveCacheManager reactiveCacheManager;
   ```
   
+  * Caching operation
+  
+  ```java
+    // Initialize ReactiveCacheManager instance manually with ReactiveCacheManagerBuilder
+    // Or auto-injected in spring boot context 
+    ReactiveCacheManager reactiveCacheManager;
+  
+    @Test
+    void get() {
+        reactiveCache.monoCache()
+                .get(cacheKey)
+                .as(StepVerifier::create)
+                .expectError(NoSuchCachedReactiveDataException.class)
+                .verify();
+    }
+
+    @Test
+    void cacheIfNecessary() {
+        reactiveCache.monoCache()
+                .cacheIfNecessary(cacheKey, Duration.ofSeconds(3), Mono.just(true))
+                .as(StepVerifier::create)
+                .expectNext(true)
+                .verifyComplete();
+        reactiveCache.monoCache()
+                .get(cacheKey)
+                .as(StepVerifier::create)
+                .expectNext(true)
+                .verifyComplete();
+    }
+
+    @Test
+    void getMany() {
+        reactiveCache.fluxCache()
+                .get(cacheKey)
+                .as(StepVerifier::create)
+                .expectError(NoSuchCachedReactiveDataException.class)
+                .verify();
+    }
+
+    @Test
+    void cacheManyIfNecessary() {
+        reactiveCache.fluxCache()
+                .cacheIfNecessary(cacheKey, Duration.ofSeconds(3), Flux.range(0,3))
+                .as(StepVerifier::create)
+                .expectNext(0)
+                .expectNext(1)
+                .expectNext(2)
+                .verifyComplete();
+        reactiveCache.fluxCache()
+                .get(cacheKey)
+                .as(StepVerifier::create)
+                .expectNext(0)
+                .expectNext(1)
+                .expectNext(2)
+                .verifyComplete();
+    }
+
+    @Test
+    void evictCache() {
+        reactiveCache.monoCache()
+                .evictCache(cacheKey)
+                .as(StepVerifier::create)
+                .verifyComplete();
+        reactiveCache.fluxCache()
+                .evictCache(cacheKey)
+                .as(StepVerifier::create)
+                .verifyComplete();
+        reactiveCache.monoCache()
+                .cacheIfNecessary(cacheKey, Duration.ofSeconds(3), Mono.just(true))
+                .as(StepVerifier::create)
+                .expectNext(true)
+                .verifyComplete();
+        reactiveCache.monoCache()
+                .evictCache(cacheKey)
+                .as(StepVerifier::create)
+                .verifyComplete();
+        reactiveCache.fluxCache()
+                .cacheIfNecessary(cacheKey, Duration.ofSeconds(3), Flux.range(0,3))
+                .as(StepVerifier::create)
+                .expectNext(0)
+                .expectNext(1)
+                .expectNext(2)
+                .verifyComplete();
+        reactiveCache.fluxCache()
+                .evictCache(cacheKey)
+                .as(StepVerifier::create)
+                .verifyComplete();
+    }
+  ```
+  
 * For more details, please refer to the source code and the test cases.
 
 #### Note:
