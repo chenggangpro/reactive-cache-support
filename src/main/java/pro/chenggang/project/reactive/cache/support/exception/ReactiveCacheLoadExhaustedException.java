@@ -2,6 +2,8 @@ package pro.chenggang.project.reactive.cache.support.exception;
 
 import lombok.Getter;
 
+import java.io.Serial;
+
 /**
  * Waiting load cache exhausted exception
  *
@@ -12,6 +14,7 @@ import lombok.Getter;
 @Getter
 public class ReactiveCacheLoadExhaustedException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 5589465903249165312L;
 
     private final String cacheName;

@@ -9,7 +9,6 @@ import pro.chenggang.project.reactive.cache.support.core.adapter.ReactiveCacheFl
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.concurrent.Queues;
-import reactor.util.function.Tuple2;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,36 +50,29 @@ public class RedisReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapter {
     }
 
     @Override
-    public <T> Flux<T> cacheData(@NonNull String cacheKey,
-                                 @NonNull Duration cacheDuration,
-                                 @NonNull Flux<T> sourcePublisher) {
+    public <T> Flux<T> cacheData(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Flux<T> sourcePublisher) {
         final AtomicBoolean initFlag = new AtomicBoolean(false);
         final ReactiveListOperations<String, Object> reactiveListOperations = reactiveRedisTemplate.opsForList();
-        return Flux.zip(sourcePublisher,
-                        sourcePublisher.share()
-                                .concatMap(value -> reactiveListOperations.rightPush(cacheKey,
-                                        value
-                                ))
-                                .concatMap(data -> Mono.just(initFlag)
-                                        .map(atomicBoolean -> atomicBoolean.compareAndSet(false,
-                                                true
-                                        ))
-                                        .filter(Boolean::booleanValue)
-                                        .flatMap(firstTouch -> reactiveRedisTemplate.expire(
-                                                cacheKey,
-                                                cacheDuration
-                                        ))
-                                        .then(Mono.just(data))
-                                )
-                )
-                .map(Tuple2::getT1);
+        return sourcePublisher.publish(sharedFlux -> {
+            Flux<T> cacheOperationFlux = sharedFlux.share()
+                    .concatMap(value -> reactiveListOperations.rightPush(cacheKey, value)
+                            .flatMap(data -> Mono.just(initFlag)
+                                    .map(atomicBoolean -> atomicBoolean.compareAndSet(false, true))
+                                    .filter(Boolean::booleanValue)
+                                    .flatMap(firstTouch -> reactiveRedisTemplate.expire(cacheKey, cacheDuration))
+                            )
+                            .then(Mono.empty())
+                    );
+            return Flux.just(cacheOperationFlux, sharedFlux)
+                    .flatMap(Flux::from);
+        });
     }
 
     @Override
     public Mono<Void> cleanupData(@NonNull String cacheKey) {
         return reactiveRedisTemplate.delete(cacheKey)
                 .then(Mono.defer(() -> {
-                    log.debug("[Redis reactive cache flux adapter]Cleanup cached data success, CacheKey: {}",cacheKey);
+                    log.debug("Cleanup cached data success, CacheKey: {}", cacheKey);
                     return Mono.empty();
                 }));
     }

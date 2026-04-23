@@ -2,18 +2,18 @@ package pro.chenggang.project.reactive.cache.support.defaults.caffeine;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+import com.github.benmanes.caffeine.cache.Scheduler;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import pro.chenggang.project.reactive.cache.support.core.adapter.ReactiveCacheFluxAdapter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,81 +33,81 @@ public class CaffeineReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapte
 
     @Override
     public Mono<Boolean> hasData(@NonNull String cacheKey) {
-        return Mono.defer(() -> Mono.fromFuture(CompletableFuture.supplyAsync(() ->
+        return Mono.defer(() -> Mono.fromCallable(() ->
                 fluxDataCache.containsKey(cacheKey)
                         &&
                         fluxDataCache.get(cacheKey)
                                 .asMap()
-                                .containsKey(cacheKey)))
+                                .containsKey(cacheKey))
         );
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> Flux<T> loadData(@NonNull String cacheKey) {
-        return Flux.defer(() -> Mono.fromFuture(CompletableFuture.supplyAsync(() ->
-                                Optional.ofNullable(fluxDataCache.get(cacheKey)))
-                        )
-                        .flatMap(Mono::justOrEmpty)
-                        .flatMapMany(cache -> Mono.justOrEmpty(cache.getIfPresent(cacheKey))
-                                .flatMapMany(cachedData -> (Flux<T>) Flux.fromIterable(cachedData))
-                        )
-        );
+        return Mono.fromCallable(() -> fluxDataCache.get(cacheKey))
+                .flatMapMany(cache -> Mono.fromCallable(() -> cache.getIfPresent(cacheKey))
+                        .flatMapMany(cachedData -> (Flux<T>) Flux.fromIterable(cachedData))
+                );
     }
 
     @Override
-    public <T> Flux<T> cacheData(@NonNull String cacheKey,
-                                 @NonNull Duration cacheDuration,
-                                 @NonNull Flux<T> sourcePublisher) {
+    public <T> Flux<T> cacheData(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Flux<T> sourcePublisher) {
         final AtomicBoolean initFlag = new AtomicBoolean(false);
-        return Flux.zip(sourcePublisher,
-                        sourcePublisher.share()
-                                .concatMap(item -> {
-                                    if (initFlag.compareAndSet(false, true)) {
-                                        return Mono.fromFuture(CompletableFuture.supplyAsync(() -> fluxDataCache.compute(
-                                                cacheKey,
-                                                (key, value) -> {
-                                                    ConcurrentLinkedDeque<Object> data = new ConcurrentLinkedDeque<>();
-                                                    data.add(item);
-                                                    if (Objects.isNull(value)) {
-                                                        Cache<String, ConcurrentLinkedDeque<Object>> cache = Caffeine.newBuilder()
-                                                                .expireAfterWrite(cacheDuration)
-                                                                .build();
-                                                        cache.put(cacheKey, data);
-                                                        return cache;
-                                                    }
-                                                    value.invalidateAll();
-                                                    Cache<String, ConcurrentLinkedDeque<Object>> cache = Caffeine.newBuilder()
-                                                            .expireAfterWrite(cacheDuration)
-                                                            .build();
-                                                    cache.put(cacheKey, data);
-                                                    return cache;
-                                                }
-                                        )));
+        return sourcePublisher.publish(sharedFlux -> {
+            Flux<T> cacheOperationFlux = sharedFlux.concatMap(item -> {
+                if (initFlag.compareAndSet(false, true)) {
+                    return Mono.fromRunnable(() -> {
+                        fluxDataCache.compute(
+                                cacheKey,
+                                (key, value) -> {
+                                    ConcurrentLinkedDeque<Object> data = new ConcurrentLinkedDeque<>();
+                                    data.add(item);
+                                    if (Objects.isNull(value)) {
+                                        Cache<String, ConcurrentLinkedDeque<Object>> cache = Caffeine.newBuilder()
+                                                .expireAfterWrite(cacheDuration)
+                                                .scheduler(Scheduler.systemScheduler())
+                                                .removalListener(this::removalListener)
+                                                .build();
+                                        cache.put(cacheKey, data);
+                                        return cache;
                                     }
-                                    return Mono.fromFuture(CompletableFuture.supplyAsync(() -> Optional.ofNullable(
-                                                    fluxDataCache.get(cacheKey))))
-                                            .flatMap(Mono::justOrEmpty)
-                                            .flatMap(asyncCache -> Mono.justOrEmpty(asyncCache.getIfPresent(cacheKey))
-                                                    .flatMap(deque -> Mono.fromFuture(CompletableFuture.supplyAsync(() -> {
-                                                        deque.add(item);
-                                                        return true;
-                                                    })))
-                                            );
-                                })
-                )
-                .map(Tuple2::getT1);
+                                    value.invalidateAll();
+                                    Cache<String, ConcurrentLinkedDeque<Object>> cache = Caffeine.newBuilder()
+                                            .expireAfterWrite(cacheDuration)
+                                            .removalListener(this::removalListener)
+                                            .scheduler(Scheduler.systemScheduler())
+                                            .build();
+                                    cache.put(cacheKey, data);
+                                    return cache;
+                                }
+                        );
+                    });
+                }
+                return Mono.fromCallable(() -> fluxDataCache.get(cacheKey))
+                        .flatMap(asyncCache -> Mono.fromCallable(() -> asyncCache.getIfPresent(cacheKey))
+                                .flatMap(deque -> Mono.fromRunnable(() -> deque.add(item)))
+                        );
+            });
+            return Flux.just(cacheOperationFlux, sharedFlux)
+                    .flatMap(Flux::from);
+        });
+    }
+
+    private void removalListener(@Nullable String key, @Nullable Object value, RemovalCause cause) {
+        log.debug("Cache removed for key : {} cause : {}", key, cause);
     }
 
     @Override
     public Mono<Void> cleanupData(@NonNull String cacheKey) {
-        return Mono.fromFuture(CompletableFuture.runAsync(() -> {
+        return Mono.fromRunnable(() -> {
             Cache<String, ConcurrentLinkedDeque<Object>> cache = fluxDataCache.remove(cacheKey);
             if (Objects.nonNull(cache)) {
                 cache.invalidateAll();
+                cache.cleanUp();
             }
-            log.debug("[Caffeine reactive cache flux adapter]Cleanup cached data success, CacheKey: {}", cacheKey);
-        }));
+            log.debug("Cleanup cached data success, CacheKey: {}", cacheKey);
+        });
     }
 
 }

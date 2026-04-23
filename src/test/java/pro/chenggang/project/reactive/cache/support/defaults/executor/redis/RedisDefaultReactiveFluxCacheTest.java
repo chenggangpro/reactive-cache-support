@@ -79,6 +79,8 @@ class RedisDefaultReactiveFluxCacheTest extends BaseTestWithRedis {
                         })
                 )
                 .as(StepVerifier::create)
+                .expectNext(0)
+                .expectNext(1)
                 .expectError(IllegalStateException.class)
                 .verify();
     }

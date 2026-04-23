@@ -1,9 +1,9 @@
 package pro.chenggang.project.reactive.cache.support.configuration.properties;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.validation.constraints.NotNull;
 import java.time.Duration;
 
 /**
@@ -19,6 +19,9 @@ public class ReactiveCacheSupportProperties {
 
     public static final String PREFIX = "reactive.cache";
 
+    /**
+     * Whether enable reactive cache
+     */
     private boolean enabled = false;
 
     /**

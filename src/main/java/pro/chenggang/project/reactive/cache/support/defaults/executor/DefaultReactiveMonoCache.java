@@ -49,7 +49,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                 .then(reactiveCacheMonoAdapter.hasData(cacheKey))
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("[Reactive Cache](Get-Mono)Cached data didn't exist, " +
+                    log.warn("(Get-Mono)Cached data didn't exist, " +
                             "return no such cached data exception instead of Mono.empty()"
                     );
                     return Mono.error(new NoSuchCachedReactiveDataException(cacheName, cacheKey));
@@ -58,15 +58,13 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
     }
 
     @Override
-    public <T> Mono<T> cacheIfNecessary(@NonNull String cacheKey,
-                                        @NonNull Duration cacheDuration,
-                                        @NonNull Mono<T> sourceMono) {
+    public <T> Mono<T> cacheIfNecessary(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Mono<T> sourceMono) {
         return reactiveCacheLock.checkInitializeLock(cacheName, cacheKey, maxWaitingDuration)
                 .then(reactiveCacheMonoAdapter.hasData(cacheKey))
                 .flatMap(hasData -> {
                     if (hasData) {
                         log.debug(
-                                "[Reactive Cache](Mono)Cached data exist, return the cached data, " +
+                                "(Mono)Cached data exist, return the cached data, " +
                                         "CacheName:{}, CacheKey:{}",
                                 cacheName,
                                 cacheKey
@@ -92,7 +90,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                             ,
                             currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                                     .doOnNext(operationId -> log.debug(
-                                            "[Reactive Cache](Mono)Release initialization lock, CacheName:{}, CacheKey:{}, " +
+                                            "(Mono)Release initialization lock, CacheName:{}, CacheKey:{}, " +
                                                     "ReleasedOperationId:{}, CurrentOperationId:{}",
                                             cacheName,
                                             cacheKey,
@@ -105,7 +103,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                                             cacheKey
                                     )
                                     .doOnNext(operationId -> log.debug(
-                                            "[Reactive Cache](Mono)Release initialization lock on Error, " +
+                                            "(Mono)Release initialization lock on Error, " +
                                                     "CacheName:{}, CacheKey:{}, " +
                                                     "ReleasedOperationId:{}, CurrentOperationId:{}",
                                             cacheName,
@@ -117,7 +115,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                             ,
                             (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                                     .doOnNext(operationId -> log.debug(
-                                            "[Reactive Cache](Mono)Release initialization lock, " +
+                                            "(Mono)Release initialization lock, " +
                                                     "CacheName:{}, CacheKey:{}, " +
                                                     "ReleasedOperationId:{}, CurrentOperationId:{}",
                                             cacheName,
@@ -143,7 +141,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                 ,
                 currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                         .doOnNext(operationId -> log.debug(
-                                "[Reactive Cache](Cleanup)Release initialization lock, CacheName:{}, CacheKey:{}, " +
+                                "(Cleanup)Release initialization lock, CacheName:{}, CacheKey:{}, " +
                                         "ReleasedOperationId:{}, CurrentOperationId:{}",
                                 cacheName,
                                 cacheKey,
@@ -154,7 +152,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                 ,
                 (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                         .doOnNext(operationId -> log.debug(
-                                "[Reactive Cache](Cleanup)Release initialization lock on Error, " +
+                                "(Cleanup)Release initialization lock on Error, " +
                                         "CacheName:{}, CacheKey:{}, " +
                                         "ReleasedOperationId:{}, CurrentOperationId:{}",
                                 cacheName,
@@ -166,7 +164,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                 ,
                 (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                         .doOnNext(operationId -> log.debug(
-                                "[Reactive Cache](Cleanup)Release initialization lock, " +
+                                "(Cleanup)Release initialization lock, " +
                                         "CacheName:{}, CacheKey:{}, " +
                                         "ReleasedOperationId:{}, CurrentOperationId:{}",
                                 cacheName,

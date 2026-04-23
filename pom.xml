@@ -38,16 +38,18 @@
     </scm>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <caffeine.version>3.1.7</caffeine.version>
-        <spring-boot-starter-parent.version>2.7.14</spring-boot-starter-parent.version>
-        <testcontainers.version>1.18.3</testcontainers.version>
-        <reactor-extra.version>3.5.1</reactor-extra.version>
-        <blockhound.version>1.0.8.RELEASE</blockhound.version>
-        <testcontainers-redis.version>1.6.4</testcontainers-redis.version>
-        <spring-cloud-starter-bootstrap.version>3.1.7</spring-cloud-starter-bootstrap.version>
+        <caffeine.version>3.2.3</caffeine.version>
+        <lombok.version>1.18.38</lombok.version>
+        <spring-boot-starter-parent.version>3.5.13</spring-boot-starter-parent.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
+        <reactor-extra.version>3.5.4</reactor-extra.version>
+        <blockhound.version>1.0.16.RELEASE</blockhound.version>
+        <testcontainers-redis.version>2.2.4</testcontainers-redis.version>
+        <central-publishing-maven-plugin.version>0.10.0</central-publishing-maven-plugin.version>
+        <junit-jupiter.version>5.12.1</junit-jupiter.version>
     </properties>
 
     <dependencies>
@@ -69,6 +71,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-json</artifactId>
         </dependency>
 
         <dependency>
@@ -100,7 +106,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.redis.testcontainers</groupId>
+            <groupId>com.redis</groupId>
             <artifactId>testcontainers-redis</artifactId>
             <version>${testcontainers-redis.version}</version>
             <scope>test</scope>
@@ -114,6 +120,21 @@
             <groupId>io.projectreactor.tools</groupId>
             <artifactId>blockhound</artifactId>
             <version>${blockhound.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -134,6 +155,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -148,7 +176,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.3.2</version>
+                        <version>3.11.2</version>
                         <executions>
                             <execution>
                                 <phase>package</phase>
@@ -164,7 +192,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
+                        <version>3.2.7</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -178,6 +206,15 @@
                             <keyname>${gpg.keyname}</keyname>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central-publishing-maven-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -189,19 +226,44 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.13.0</version>
                 <configuration>
                     <verbose>true</verbose>
                     <fork>true</fork>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
+                    <parameters>true</parameters>
+                    <compilerArgs>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+                        <arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+                        <arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+                    </compilerArgs>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                            <version>${spring-boot-starter-parent.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.3.1</version>
                 <configuration>
                     <attach>true</attach>
                 </configuration>
@@ -217,7 +279,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-                <version>2.10.0</version>
+                <version>2.18.0</version>
                 <configuration>
                     <generateBackupPoms>false</generateBackupPoms>
                 </configuration>
@@ -230,7 +292,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.10</version>
+                <version>0.8.14</version>
                 <executions>
                     <execution>
                         <goals>
@@ -243,29 +305,6 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>verify</goal>
-                            <goal>integration-test</goal>
-                        </goals>
-                        <configuration>
-                            <argLine>@{argLine}</argLine>
-                            <systemPropertyVariables>
-                                <java.security.egd>file:/dev/./urandom</java.security.egd>
-                            </systemPropertyVariables>
-                            <environmentVariables>
-                                <TESTCONTAINERS_RYUK_DISABLED>true</TESTCONTAINERS_RYUK_DISABLED>
-                            </environmentVariables>
-                            <trimStackTrace>false</trimStackTrace>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

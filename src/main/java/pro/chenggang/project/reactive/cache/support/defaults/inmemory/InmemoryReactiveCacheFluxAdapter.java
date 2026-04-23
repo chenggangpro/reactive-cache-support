@@ -7,11 +7,9 @@ import pro.chenggang.project.reactive.cache.support.core.adapter.ReactiveCacheFl
 import pro.chenggang.project.reactive.cache.support.toolkit.AutoExpiredDataCache;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,49 +28,45 @@ public class InmemoryReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapte
 
     @Override
     public Mono<Boolean> hasData(@NonNull String cacheKey) {
-        return Mono.defer(() -> Mono.fromFuture(CompletableFuture.supplyAsync(() -> fluxDataCache.hasData(cacheKey))));
+        return Mono.fromCallable(() -> fluxDataCache.hasData(cacheKey));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> Flux<T> loadData(@NonNull String cacheKey) {
-        return Mono.defer(() -> Mono.fromFuture(CompletableFuture.supplyAsync(() -> fluxDataCache.getData(cacheKey))))
+        return Mono.fromCallable(() -> fluxDataCache.getData(cacheKey))
                 .flatMap(Mono::justOrEmpty)
                 .flatMapMany(cachedData -> (Flux<T>) Flux.fromIterable(cachedData));
     }
 
     @Override
-    public <T> Flux<T> cacheData(@NonNull String cacheKey,
-                                 @NonNull Duration cacheDuration,
-                                 @NonNull Flux<T> sourcePublisher) {
+    public <T> Flux<T> cacheData(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Flux<T> sourcePublisher) {
         final AtomicBoolean initFlag = new AtomicBoolean(false);
-        return Flux.zip(sourcePublisher,
-                        sourcePublisher.share()
-                                .concatMap(value -> {
-                                    if (initFlag.compareAndSet(false, true)) {
-                                        return Mono.fromFuture(CompletableFuture.supplyAsync(() -> {
-                                            ConcurrentLinkedDeque<Object> data = new ConcurrentLinkedDeque<>();
-                                            data.add(value);
-                                            fluxDataCache.putData(cacheKey, data, cacheDuration);
-                                            return true;
-                                        }));
-                                    }
-                                    return Mono.fromFuture(CompletableFuture.supplyAsync(() -> {
-                                        Optional<ConcurrentLinkedDeque<Object>> optionalDeque = fluxDataCache.getData(cacheKey);
-                                        optionalDeque.ifPresent(deque -> deque.add(value));
-                                        return true;
-                                    }));
-                                })
-                )
-                .map(Tuple2::getT1);
+        return sourcePublisher.publish(sharedFlux -> {
+            Flux<T> cacheOperationFlux = sharedFlux.concatMap(value -> {
+                if (initFlag.compareAndSet(false, true)) {
+                    return Mono.fromRunnable(() -> {
+                        ConcurrentLinkedDeque<Object> data = new ConcurrentLinkedDeque<>();
+                        data.add(value);
+                        fluxDataCache.putData(cacheKey, data, cacheDuration);
+                    });
+                }
+                return Mono.fromRunnable(() -> {
+                    Optional<ConcurrentLinkedDeque<Object>> optionalDeque = fluxDataCache.getData(cacheKey);
+                    optionalDeque.ifPresent(deque -> deque.add(value));
+                });
+            });
+            return Flux.just(cacheOperationFlux, sharedFlux)
+                    .flatMap(Flux::from);
+        });
     }
 
     @Override
     public Mono<Void> cleanupData(@NonNull String cacheKey) {
-        return Mono.fromFuture(CompletableFuture.runAsync(() -> {
+        return Mono.fromRunnable(() -> {
             fluxDataCache.removeData(cacheKey);
-            log.debug("[Inmemory reactive cache flux adapter]Cleanup cached data success, CacheKey: {}", cacheKey);
-        }));
+            log.debug("Cleanup cached data success, CacheKey: {}", cacheKey);
+        });
     }
 
 }

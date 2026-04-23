@@ -76,6 +76,8 @@ class InmemoryDefaultReactiveFluxCacheTest extends BaseTest {
                         })
                 )
                 .as(StepVerifier::create)
+                .expectNext(0)
+                .expectNext(1)
                 .expectError(IllegalStateException.class)
                 .verify();
     }

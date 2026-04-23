@@ -10,7 +10,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -51,12 +50,12 @@ public class AutoExpiredDataCache<T> {
     protected void startup() {
         if (startFlag.compareAndSet(false, true)) {
             Flux.interval(Duration.ofMillis(100))
-                    .flatMap(__ -> Mono.fromFuture(CompletableFuture.runAsync(() -> {
+                    .flatMap(__ -> Mono.fromRunnable(() -> {
                         AutoExpiredDataWrapper<T> data = delayQueue.poll();
                         if (Objects.nonNull(data) && cachedDataContainer.containsKey(data.getDataKey())) {
                             cachedDataContainer.remove(data.getDataKey(), data);
                         }
-                    })))
+                    }))
                     .subscribeOn(Schedulers.newSingle(r -> {
                         Thread daemonThread = new Thread(r, "cache-daemon-");
                         daemonThread.setDaemon(true);
@@ -89,22 +88,23 @@ public class AutoExpiredDataCache<T> {
                     "Expired duration could not be negative or zero, current value is : " + expiredDuration);
         }
         return cachedDataContainer.compute(dataKey, (key, value) -> {
-                    if (Objects.isNull(value)) {
-                        AutoExpiredDataWrapper<T> autoExpiredDataWrapper = new AutoExpiredDataWrapper<>(dataKey,
-                                data,
-                                expiredDuration
-                        );
-                        delayQueue.add(autoExpiredDataWrapper);
-                        return autoExpiredDataWrapper;
-                    }
-                    value.terminate();
-                    AutoExpiredDataWrapper<T> autoExpiredDataWrapper = new AutoExpiredDataWrapper<>(dataKey,
-                            data,
-                            expiredDuration
-                    );
-                    delayQueue.add(autoExpiredDataWrapper);
-                    return autoExpiredDataWrapper;
-                })
+                            if (Objects.isNull(value)) {
+                                AutoExpiredDataWrapper<T> autoExpiredDataWrapper = new AutoExpiredDataWrapper<>(dataKey,
+                                        data,
+                                        expiredDuration
+                                );
+                                delayQueue.add(autoExpiredDataWrapper);
+                                return autoExpiredDataWrapper;
+                            }
+                            value.terminate();
+                            AutoExpiredDataWrapper<T> autoExpiredDataWrapper = new AutoExpiredDataWrapper<>(dataKey,
+                                    data,
+                                    expiredDuration
+                            );
+                            delayQueue.add(autoExpiredDataWrapper);
+                            return autoExpiredDataWrapper;
+                        }
+                )
                 .getData();
     }
 
@@ -155,9 +155,7 @@ public class AutoExpiredDataCache<T> {
         private final long targetExpireTime;
         private final AtomicBoolean terminated = new AtomicBoolean(false);
 
-        private AutoExpiredDataWrapper(@NonNull String dataKey,
-                                       @NonNull DATA data,
-                                       @NonNull Duration expiredDuration) {
+        private AutoExpiredDataWrapper(@NonNull String dataKey, @NonNull DATA data, @NonNull Duration expiredDuration) {
             this.dataKey = dataKey;
             if (expiredDuration.isNegative() || expiredDuration.isZero()) {
                 throw new IllegalArgumentException(
