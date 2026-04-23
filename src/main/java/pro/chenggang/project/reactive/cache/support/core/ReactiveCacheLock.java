@@ -33,9 +33,7 @@ public interface ReactiveCacheLock {
      * @param maxWaitingDuration the max waiting duration
      * @return the Void
      */
-    Mono<Void> checkInitializeLock(@NonNull String cacheName,
-                                   @NonNull String cacheKey,
-                                   @NonNull Duration maxWaitingDuration);
+    Mono<Void> checkInitializeLock(@NonNull String cacheName, @NonNull String cacheKey, @NonNull Duration maxWaitingDuration);
 
     /**
      * Try lock initialize lock.
@@ -45,9 +43,7 @@ public interface ReactiveCacheLock {
      * @param maxWaitingDuration the max waiting duration
      * @return the current operation id
      */
-    Mono<String> tryLockInitializeLock(@NonNull String cacheName,
-                                       @NonNull String cacheKey,
-                                       @NonNull Duration maxWaitingDuration);
+    Mono<String> tryLockInitializeLock(@NonNull String cacheName, @NonNull String cacheKey, @NonNull Duration maxWaitingDuration);
 
     /**
      * Release initialize lock.

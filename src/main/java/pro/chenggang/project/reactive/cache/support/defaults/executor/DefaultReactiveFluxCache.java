@@ -50,7 +50,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                 .then(reactiveCacheFluxAdapter.hasData(cacheKey))
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("[Reactive Cache](Get-Flux)Cached data didn't exist, " +
+                    log.warn("(Get-Flux)Cached data didn't exist, " +
                             "return no such cached data exception instead of Flux.empty()"
                     );
                     return Mono.error(new NoSuchCachedReactiveDataException(cacheName, cacheKey));
@@ -59,15 +59,13 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
     }
 
     @Override
-    public <T> Flux<T> cacheIfNecessary(@NonNull String cacheKey,
-                                        @NonNull Duration cacheDuration,
-                                        @NonNull Flux<T> sourceFlux) {
+    public <T> Flux<T> cacheIfNecessary(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Flux<T> sourceFlux) {
         return reactiveCacheLock.checkInitializeLock(cacheName, cacheKey, maxWaitingDuration)
                 .then(reactiveCacheFluxAdapter.hasData(cacheKey))
                 .flatMapMany(hasData -> {
                     if (hasData) {
                         log.debug(
-                                "[Reactive Cache](Flux)Cache data exist, return the cached data, " +
+                                "(Flux)Cache data exist, return the cached data, " +
                                         "CacheName:{}, CacheKey:{}",
                                 cacheName,
                                 cacheKey
@@ -93,7 +91,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                             ,
                             currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                                     .doOnNext(operationId -> log.debug(
-                                            "[Reactive Cache](Flux)Release initialization lock, CacheName:{}, CacheKey:{}, " +
+                                            "(Flux)Release initialization lock, CacheName:{}, CacheKey:{}, " +
                                                     "ReleasedOperationId:{}, CurrentOperationId:{}",
                                             cacheName,
                                             cacheKey,
@@ -106,7 +104,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                                             cacheKey
                                     )
                                     .doOnNext(operationId -> log.debug(
-                                            "[Reactive Cache](Flux)Release initialization lock on Error, " +
+                                            "(Flux)Release initialization lock on Error, " +
                                                     "CacheName:{}, CacheKey:{}, " +
                                                     "ReleasedOperationId:{}, CurrentOperationId:{}",
                                             cacheName,
@@ -118,7 +116,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                             ,
                             (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                                     .doOnNext(operationId -> log.debug(
-                                            "[Reactive Cache](Flux)Release initialization lock, " +
+                                            "(Flux)Release initialization lock, " +
                                                     "CacheName:{}, CacheKey:{}, " +
                                                     "ReleasedOperationId:{}, CurrentOperationId:{}",
                                             cacheName,
@@ -144,7 +142,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                 ,
                 currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                         .doOnNext(operationId -> log.debug(
-                                "[Reactive Cache](Cleanup)Release initialization lock, CacheName:{}, CacheKey:{}, " +
+                                "(Cleanup)Release initialization lock, CacheName:{}, CacheKey:{}, " +
                                         "ReleasedOperationId:{}, CurrentOperationId:{}",
                                 cacheName,
                                 cacheKey,
@@ -155,7 +153,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                 ,
                 (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                         .doOnNext(operationId -> log.debug(
-                                "[Reactive Cache](Cleanup)Release initialization lock on Error, " +
+                                "(Cleanup)Release initialization lock on Error, " +
                                         "CacheName:{}, CacheKey:{}, " +
                                         "ReleasedOperationId:{}, CurrentOperationId:{}",
                                 cacheName,
@@ -167,7 +165,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                 ,
                 (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
                         .doOnNext(operationId -> log.debug(
-                                "[Reactive Cache](Cleanup)Release initialization lock, " +
+                                "(Cleanup)Release initialization lock, " +
                                         "CacheName:{}, CacheKey:{}, " +
                                         "ReleasedOperationId:{}, CurrentOperationId:{}",
                                 cacheName,

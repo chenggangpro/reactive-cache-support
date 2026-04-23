@@ -11,7 +11,6 @@ import reactor.retry.Repeat;
 import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -32,9 +31,7 @@ public class InmemoryReactiveCacheLock implements ReactiveCacheLock {
                                           @NonNull String cacheKey,
                                           @NonNull Duration maxWaitingDuration) {
         final String decoratedCacheInitializeLockKey = decorateCacheInitializeLockKey(cacheName, cacheKey);
-        return Mono.defer(() -> Mono.fromFuture(CompletableFuture.supplyAsync(() -> lockContainer.get(
-                        decoratedCacheInitializeLockKey)))
-                )
+        return Mono.fromCallable(() -> lockContainer.get(decoratedCacheInitializeLockKey))
                 .map(ConcurrentLinkedDeque::size)
                 .defaultIfEmpty(0)
                 .filter(lockedSize -> lockedSize == 0)
@@ -44,7 +41,7 @@ public class InmemoryReactiveCacheLock implements ReactiveCacheLock {
                 )
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error(
-                            "[Inmemory reactive cache initialize lock](Check whether any cache initialization running): " +
+                            "(Check whether any cache initialization running): " +
                                     "Initialization is running and reach the max waiting duration:{}, CacheName:{},CacheKey:{}",
                             maxWaitingDuration,
                             cacheName,
@@ -53,7 +50,7 @@ public class InmemoryReactiveCacheLock implements ReactiveCacheLock {
                     return Mono.error(new ReactiveCacheLoadExhaustedException(cacheName, cacheKey));
                 }))
                 .doOnNext(lockNotExist -> log.debug(
-                        "[Inmemory reactive cache initialize lock](Check whether any cache initialization running): " +
+                        "(Check whether any cache initialization running): " +
                                 "None of initialization is running, CacheName:{},CacheKey:{}",
                         cacheName,
                         cacheKey
@@ -62,49 +59,46 @@ public class InmemoryReactiveCacheLock implements ReactiveCacheLock {
     }
 
     @Override
-    public Mono<String> tryLockInitializeLock(@NonNull String cacheName,
-                                              @NonNull String cacheKey,
-                                              @NonNull Duration maxWaitingDuration) {
+    public Mono<String> tryLockInitializeLock(@NonNull String cacheName, @NonNull String cacheKey, @NonNull Duration maxWaitingDuration) {
         final String cacheInitializeLockKey = decorateCacheInitializeLockKey(cacheName, cacheKey);
-        final String currentOperationId = UUID.randomUUID()
-                .toString();
-        return Mono.fromFuture(CompletableFuture.supplyAsync(() -> lockContainer.computeIfAbsent(cacheInitializeLockKey,
+        final String currentOperationId = UUID.randomUUID().toString();
+        return Mono.fromCallable(() -> lockContainer.computeIfAbsent(cacheInitializeLockKey,
                         key -> new ConcurrentLinkedDeque<>()
-                )))
+                ))
                 .map(deque -> deque.add(currentOperationId))
-                .flatMap(__ -> Mono.defer(() -> Mono.just(lockContainer.get(cacheInitializeLockKey))
-                                        .map(ConcurrentLinkedDeque::peekFirst)
-                                )
-                                .filter(value -> Objects.equals(value, currentOperationId))
-                                .repeatWhenEmpty(Repeat.onlyIf(repeatContext -> true)
-                                        .timeout(maxWaitingDuration)
-                                        .backoff(Backoff.fixed(Duration.ofMillis(300)))
-                                )
-                                .switchIfEmpty(Mono.defer(() -> {
-                                    log.error(
-                                            "[Inmemory reactive cache initialize lock](Check whether any cache initialization running): " +
-                                                    "Current operation is not the head of lock queue and reach the max waiting duration: {}, " +
-                                                    "CacheName: {},CacheKey: {}, CurrentOperationId: {}",
-                                            maxWaitingDuration,
-                                            cacheName,
-                                            cacheKey,
-                                            currentOperationId
-                                    );
-                                    return Mono.just(lockContainer.get(cacheInitializeLockKey))
-                                            .flatMap(deque -> Mono.fromFuture(CompletableFuture.runAsync(() ->
-                                                                    deque.removeIf(value -> Objects.equals(value,
-                                                                                    currentOperationId
-                                                                            )
-                                                                    ))
+                .flatMap(__ -> Mono.just(lockContainer.get(cacheInitializeLockKey))
+                        .map(ConcurrentLinkedDeque::peekFirst)
+                )
+                .filter(value -> Objects.equals(value, currentOperationId))
+                .repeatWhenEmpty(Repeat.onlyIf(repeatContext -> true)
+                        .timeout(maxWaitingDuration)
+                        .backoff(Backoff.fixed(Duration.ofMillis(300)))
+                )
+                .switchIfEmpty(Mono.defer(() -> {
+                            log.error(
+                                    "(Check whether any cache initialization running): " +
+                                            "Current operation is not the head of lock queue and reach the max waiting duration: {}, " +
+                                            "CacheName: {},CacheKey: {}, CurrentOperationId: {}",
+                                    maxWaitingDuration,
+                                    cacheName,
+                                    cacheKey,
+                                    currentOperationId
+                            );
+                            return Mono.just(lockContainer.get(cacheInitializeLockKey))
+                                    .flatMap(deque -> Mono.fromRunnable(() ->
+                                                            deque.removeIf(value -> Objects.equals(value,
+                                                                            currentOperationId
+                                                                    )
                                                             )
-                                                            .then(Mono.error(new ReactiveCacheLoadExhaustedException(cacheName,
-                                                                    cacheKey
-                                                            )))
-                                            );
-                                }))
+                                                    )
+                                                    .then(Mono.error(new ReactiveCacheLoadExhaustedException(cacheName,
+                                                            cacheKey
+                                                    )))
+                                    );
+                        })
                 )
                 .doOnNext(operationId -> log.debug(
-                        "[Inmemory reactive cache initialize lock](Lock initialization success): " +
+                        "(Lock initialization success): " +
                                 "CacheName: {},CacheKey: {},LockedOperationId: {},CurrentOperationId: {}",
                         cacheName,
                         cacheKey,
@@ -117,10 +111,10 @@ public class InmemoryReactiveCacheLock implements ReactiveCacheLock {
     @Override
     public Mono<String> releaseInitializeLock(@NonNull String cacheName, @NonNull String cacheKey) {
         final String cacheInitializeLockKey = decorateCacheInitializeLockKey(cacheName, cacheKey);
-        return Mono.fromFuture(CompletableFuture.supplyAsync(() -> lockContainer.get(cacheInitializeLockKey)))
+        return Mono.fromCallable(() -> lockContainer.get(cacheInitializeLockKey))
                 .map(ConcurrentLinkedDeque::pollFirst)
                 .doOnNext(operationId -> log.debug(
-                        "[Inmemory reactive cache initialize lock](Release initialization lock): " +
+                        "(Release initialization lock): " +
                                 "CacheName: {}, CacheKey: {},LockedOperationId: {}",
                         cacheName,
                         cacheKey,

@@ -42,7 +42,7 @@ public class RedisReactiveCacheLock implements ReactiveCacheLock {
                 )
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error(
-                            "[Redis reactive cache initialize lock](Check whether any cache initialization running): " +
+                            "(Check whether any cache initialization running): " +
                                     "Initialization is running and reach the max waiting duration:{}, CacheName:{},CacheKey:{}",
                             maxWaitingDuration,
                             cacheName,
@@ -51,7 +51,7 @@ public class RedisReactiveCacheLock implements ReactiveCacheLock {
                     return Mono.error(new ReactiveCacheLoadExhaustedException(cacheName, cacheKey));
                 }))
                 .doOnNext(lockNotExist -> log.debug(
-                        "[Redis reactive cache initialize lock](Check whether any cache initialization running): " +
+                        "(Check whether any cache initialization running): " +
                                 "None of initialization is running, CacheName:{},CacheKey:{}",
                         cacheName,
                         cacheKey
@@ -60,12 +60,9 @@ public class RedisReactiveCacheLock implements ReactiveCacheLock {
     }
 
     @Override
-    public Mono<String> tryLockInitializeLock(@NonNull String cacheName,
-                                              @NonNull String cacheKey,
-                                              @NonNull Duration maxWaitingDuration) {
+    public Mono<String> tryLockInitializeLock(@NonNull String cacheName, @NonNull String cacheKey, @NonNull Duration maxWaitingDuration) {
         final String cacheInitializeLockKey = decorateCacheInitializeLockKey(cacheName, cacheKey);
-        final String currentOperationId = UUID.randomUUID()
-                .toString();
+        final String currentOperationId = UUID.randomUUID().toString();
         return reactiveRedisTemplate.opsForList()
                 .leftPush(cacheInitializeLockKey, currentOperationId)
                 .flatMap(__ -> reactiveRedisTemplate.opsForList()
@@ -78,7 +75,7 @@ public class RedisReactiveCacheLock implements ReactiveCacheLock {
                         )
                         .switchIfEmpty(Mono.defer(() -> {
                             log.error(
-                                    "[Redis reactive cache initialize lock](Check whether any cache initialization running): " +
+                                    "(Check whether any cache initialization running): " +
                                             "Current operation is not the head of lock queue and reach the max waiting duration: {}, " +
                                             "CacheName: {},CacheKey: {}, CurrentOperationId: {}",
                                     maxWaitingDuration,
@@ -93,7 +90,7 @@ public class RedisReactiveCacheLock implements ReactiveCacheLock {
                                     )));
                         })))
                 .doOnNext(operationId -> log.debug(
-                        "[Redis reactive cache initialize lock](Lock initialization success): " +
+                        "(Lock initialization success): " +
                                 "CacheName: {},CacheKey: {},LockedOperationId: {},CurrentOperationId: {}",
                         cacheName,
                         cacheKey,
@@ -110,7 +107,7 @@ public class RedisReactiveCacheLock implements ReactiveCacheLock {
                 .rightPop(cacheInitializeLockKey)
                 .cast(String.class)
                 .doOnNext(operationId -> log.debug(
-                        "[Redis reactive cache initialize lock](Release initialization lock): " +
+                        "(Release initialization lock): " +
                                 "CacheName: {}, CacheKey: {},LockedOperationId: {}",
                         cacheName,
                         cacheKey,

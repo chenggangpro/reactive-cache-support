@@ -37,9 +37,7 @@ public interface ReactiveFluxCache {
      * @param sourceFlux    the source flux
      * @return the cached flux
      */
-    <T> Flux<T> cacheIfNecessary(@NonNull String cacheKey,
-                                 @NonNull Duration cacheDuration,
-                                 @NonNull Flux<T> sourceFlux);
+    <T> Flux<T> cacheIfNecessary(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Flux<T> sourceFlux);
 
     /**
      * Evict cache.

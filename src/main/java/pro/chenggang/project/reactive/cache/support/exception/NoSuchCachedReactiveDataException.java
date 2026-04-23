@@ -2,6 +2,8 @@ package pro.chenggang.project.reactive.cache.support.exception;
 
 import lombok.Getter;
 
+import java.io.Serial;
+
 /**
  * No such cached reactive data exception
  *
@@ -12,6 +14,7 @@ import lombok.Getter;
 @Getter
 public class NoSuchCachedReactiveDataException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = -970142528523070375L;
 
     private final String cacheName;

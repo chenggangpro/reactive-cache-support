@@ -18,8 +18,8 @@ public interface ReactiveMonoCache {
     /**
      * Gets cached mono or {@code Mono.empty()} if cached data does not found.
      *
-     * @param <T>          the cached mono's data type
-     * @param cacheKey     the cache key
+     * @param <T>      the cached mono's data type
+     * @param cacheKey the cache key
      * @return the cached mono
      * @throws NoSuchCachedReactiveDataException if there is no cached data found and not be initialized,
      *                                           this exception is intended to distinguish from the empty single
@@ -36,9 +36,7 @@ public interface ReactiveMonoCache {
      * @param sourceMono    the source mono
      * @return the cached mono
      */
-    <T> Mono<T> cacheIfNecessary(@NonNull String cacheKey,
-                                 @NonNull Duration cacheDuration,
-                                 @NonNull Mono<T> sourceMono);
+    <T> Mono<T> cacheIfNecessary(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Mono<T> sourceMono);
 
     /**
      * Evict cache.

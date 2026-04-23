@@ -38,9 +38,7 @@ public class RedisReactiveCacheMonoAdapter implements ReactiveCacheMonoAdapter {
     }
 
     @Override
-    public <T> Mono<T> cacheData(@NonNull String cacheKey,
-                                 @NonNull Duration cacheDuration,
-                                 @NonNull Mono<T> sourcePublisher) {
+    public <T> Mono<T> cacheData(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Mono<T> sourcePublisher) {
         return sourcePublisher.flatMap(nextData -> reactiveRedisTemplate.opsForValue()
                 .set(cacheKey, nextData, cacheDuration)
                 .thenReturn(nextData)
@@ -51,7 +49,7 @@ public class RedisReactiveCacheMonoAdapter implements ReactiveCacheMonoAdapter {
     public Mono<Void> cleanupData(@NonNull String cacheKey) {
         return reactiveRedisTemplate.delete(cacheKey)
                 .then(Mono.defer(() -> {
-                    log.debug("[Redis reactive cache mono adapter]Cleanup cached data success, CacheKey: {}",cacheKey);
+                    log.debug("Cleanup cached data success, CacheKey: {}", cacheKey);
                     return Mono.empty();
                 }));
     }
