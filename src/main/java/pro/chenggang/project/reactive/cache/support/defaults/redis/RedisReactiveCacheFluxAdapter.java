@@ -53,19 +53,16 @@ public class RedisReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapter {
     public <T> Flux<T> cacheData(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Flux<T> sourcePublisher) {
         final AtomicBoolean initFlag = new AtomicBoolean(false);
         final ReactiveListOperations<String, Object> reactiveListOperations = reactiveRedisTemplate.opsForList();
-        return sourcePublisher.publish(sharedFlux -> {
-            Flux<T> cacheOperationFlux = sharedFlux.share()
-                    .concatMap(value -> reactiveListOperations.rightPush(cacheKey, value)
-                            .flatMap(data -> Mono.just(initFlag)
-                                    .map(atomicBoolean -> atomicBoolean.compareAndSet(false, true))
-                                    .filter(Boolean::booleanValue)
-                                    .flatMap(firstTouch -> reactiveRedisTemplate.expire(cacheKey, cacheDuration))
-                            )
-                            .then(Mono.empty())
-                    );
-            return Flux.just(cacheOperationFlux, sharedFlux)
-                    .flatMap(Flux::from);
-        });
+        return sourcePublisher.publish(sharedFlux -> sharedFlux.concatMap(value -> reactiveListOperations
+                .rightPush(cacheKey, value)
+                .flatMap(data -> {
+                    if (initFlag.compareAndSet(false, true)) {
+                        return reactiveRedisTemplate.expire(cacheKey, cacheDuration);
+                    }
+                    return Mono.just(true);
+                })
+                .thenReturn(value)
+        ));
     }
 
     @Override

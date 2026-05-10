@@ -89,7 +89,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                                                     ))
                                     )
                             ,
-                            currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                            currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                                     .doOnNext(operationId -> log.debug(
                                             "(Flux)Release initialization lock, CacheName:{}, CacheKey:{}, " +
                                                     "ReleasedOperationId:{}, CurrentOperationId:{}",
@@ -101,7 +101,8 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                                     .then()
                             ,
                             (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName,
-                                            cacheKey
+                                            cacheKey,
+                                            currentOperationId
                                     )
                                     .doOnNext(operationId -> log.debug(
                                             "(Flux)Release initialization lock on Error, " +
@@ -114,7 +115,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                                     ))
                                     .then()
                             ,
-                            (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                            (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                                     .doOnNext(operationId -> log.debug(
                                             "(Flux)Release initialization lock, " +
                                                     "CacheName:{}, CacheKey:{}, " +
@@ -140,7 +141,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                         .filter(Boolean::booleanValue)
                         .flatMap(hasData -> reactiveCacheFluxAdapter.cleanupData(cacheKey))
                 ,
-                currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                         .doOnNext(operationId -> log.debug(
                                 "(Cleanup)Release initialization lock, CacheName:{}, CacheKey:{}, " +
                                         "ReleasedOperationId:{}, CurrentOperationId:{}",
@@ -151,7 +152,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                         ))
                         .then()
                 ,
-                (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                         .doOnNext(operationId -> log.debug(
                                 "(Cleanup)Release initialization lock on Error, " +
                                         "CacheName:{}, CacheKey:{}, " +
@@ -163,7 +164,7 @@ public class DefaultReactiveFluxCache implements ReactiveFluxCache {
                         ))
                         .then()
                 ,
-                (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                         .doOnNext(operationId -> log.debug(
                                 "(Cleanup)Release initialization lock, " +
                                         "CacheName:{}, CacheKey:{}, " +

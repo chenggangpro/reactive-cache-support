@@ -1,7 +1,5 @@
 package pro.chenggang.project.reactive.cache.support.defaults;
 
-import com.github.benmanes.caffeine.cache.AsyncCache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +9,8 @@ import pro.chenggang.project.reactive.cache.support.core.adapter.ReactiveCacheMa
 import reactor.core.publisher.Mono;
 
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The default reactive cache manager.
@@ -24,8 +23,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class DefaultReactiveCacheManager implements ReactiveCacheManager {
 
-    private final AsyncCache<String, ReactiveCache> cacheContainer = Caffeine.newBuilder()
-            .buildAsync();
+    private final Map<String, ReactiveCache> cacheContainer = new ConcurrentHashMap<>();
 
     /**
      * The reactive cache manager adapter
@@ -36,19 +34,11 @@ public class DefaultReactiveCacheManager implements ReactiveCacheManager {
     @NonNull
     @Override
     public Mono<ReactiveCache> getCache(@NonNull String name) {
-        CompletableFuture<ReactiveCache> cacheCompletableFuture = cacheContainer.get(name,
-                (key, executor) -> Mono.defer(
-                                () -> Mono.just(key)
-                                        .map(reactiveCacheManagerAdapter::initializeReactiveCache)
-                        )
-                        .toFuture()
-        );
-        return Mono.fromFuture(cacheCompletableFuture);
+        return Mono.fromCallable(() -> cacheContainer.computeIfAbsent(name, reactiveCacheManagerAdapter::initializeReactiveCache));
     }
 
     @Override
     public Collection<String> getCacheNames() {
-        return cacheContainer.asMap()
-                .keySet();
+        return cacheContainer.keySet();
     }
 }

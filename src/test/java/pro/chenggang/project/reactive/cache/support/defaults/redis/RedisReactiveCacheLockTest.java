@@ -89,14 +89,13 @@ class RedisReactiveCacheLockTest extends BaseTestWithRedis{
 
     @Test
     void releaseInitializeLock() {
-        Mono<String> lockMono = redisReactiveCacheLock.tryLockInitializeLock(cacheName,
+        redisReactiveCacheLock.tryLockInitializeLock(cacheName,
                 cacheKey,
                 Duration.ofSeconds(3)
-        );
-        Mono<String> releaseMono = redisReactiveCacheLock.releaseInitializeLock(cacheName,
-                cacheKey
-        );
-        lockMono.then(releaseMono)
+        ).flatMap(operationId -> redisReactiveCacheLock.releaseInitializeLock(cacheName,
+                cacheKey,
+                operationId
+        ))
                 .as(StepVerifier::create)
                 .expectNextCount(1)
                 .verifyComplete();
@@ -105,9 +104,35 @@ class RedisReactiveCacheLockTest extends BaseTestWithRedis{
     @Test
     void releaseInitializeLockWhenEmpty() {
         redisReactiveCacheLock.releaseInitializeLock(cacheName,
-                        cacheKey
+                        cacheKey,
+                        java.util.UUID.randomUUID().toString()
                 )
                 .as(StepVerifier::create)
+                .verifyComplete();
+    }
+
+    @Test
+    void crashRecoveryTest() {
+        final String cacheInitializeLockKey = redisReactiveCacheLock.decorateCacheInitializeLockKey(cacheName, cacheKey);
+        final String staleOperationId = "stale-op-id";
+        // Manual push a stale entry (score = 0)
+        reactiveRedisTemplate.opsForZSet()
+                .add(cacheInitializeLockKey, staleOperationId, 0.0)
+                .block();
+
+        // Should recover by pruning the stale entry
+        redisReactiveCacheLock.tryLockInitializeLock(cacheName,
+                        cacheKey,
+                        Duration.ofSeconds(3)
+                )
+                .as(StepVerifier::create)
+                .expectNextCount(1)
+                .verifyComplete();
+
+        // Verify stale entry is gone
+        Mono<Double> scoreMono = reactiveRedisTemplate.opsForZSet()
+                .score(cacheInitializeLockKey, staleOperationId);
+        StepVerifier.create(scoreMono)
                 .verifyComplete();
     }
 
@@ -170,16 +195,13 @@ class RedisReactiveCacheLockTest extends BaseTestWithRedis{
                                     })
                                     .thenReturn(true);
                         },
-                        value -> redisReactiveCacheLock.releaseInitializeLock(cacheName,
-                                cacheKey
-                        ),
+                        value -> redisReactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, value),
                         (value, throwable) -> redisReactiveCacheLock.releaseInitializeLock(cacheName,
-                                        cacheKey
+                                        cacheKey,
+                                        value
                                 )
                                 .then(Mono.error(throwable)),
-                        value -> redisReactiveCacheLock.releaseInitializeLock(cacheName,
-                                cacheKey
-                        )
+                        value -> redisReactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, value)
                 )
                 .onErrorResume(ReactiveCacheLoadExhaustedException.class, throwable -> Mono.just(false));
     }

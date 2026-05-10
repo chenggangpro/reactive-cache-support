@@ -48,10 +48,11 @@ public interface ReactiveCacheLock {
     /**
      * Release initialize lock.
      *
-     * @param cacheName the cache name
-     * @param cacheKey  the cache key
+     * @param cacheName   the cache name
+     * @param cacheKey    the cache key
+     * @param operationId the operation id
      * @return the released operation id
      */
-    Mono<String> releaseInitializeLock(@NonNull String cacheName, @NonNull String cacheKey);
+    Mono<String> releaseInitializeLock(@NonNull String cacheName, @NonNull String cacheKey, @NonNull String operationId);
 
 }
