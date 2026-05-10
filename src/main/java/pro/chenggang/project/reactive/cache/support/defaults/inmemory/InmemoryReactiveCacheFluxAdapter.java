@@ -42,23 +42,20 @@ public class InmemoryReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapte
     @Override
     public <T> Flux<T> cacheData(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Flux<T> sourcePublisher) {
         final AtomicBoolean initFlag = new AtomicBoolean(false);
-        return sourcePublisher.publish(sharedFlux -> {
-            Flux<T> cacheOperationFlux = sharedFlux.concatMap(value -> {
-                if (initFlag.compareAndSet(false, true)) {
-                    return Mono.fromRunnable(() -> {
-                        ConcurrentLinkedDeque<Object> data = new ConcurrentLinkedDeque<>();
-                        data.add(value);
-                        fluxDataCache.putData(cacheKey, data, cacheDuration);
-                    });
-                }
+        return sourcePublisher.publish(sharedFlux -> sharedFlux.concatMap(value -> {
+            if (initFlag.compareAndSet(false, true)) {
                 return Mono.fromRunnable(() -> {
-                    Optional<ConcurrentLinkedDeque<Object>> optionalDeque = fluxDataCache.getData(cacheKey);
-                    optionalDeque.ifPresent(deque -> deque.add(value));
-                });
-            });
-            return Flux.just(cacheOperationFlux, sharedFlux)
-                    .flatMap(Flux::from);
-        });
+                    ConcurrentLinkedDeque<Object> data = new ConcurrentLinkedDeque<>();
+                    data.add(value);
+                    fluxDataCache.putData(cacheKey, data, cacheDuration);
+                }).thenReturn(value);
+            }
+            return Mono.fromRunnable(() -> {
+                        Optional<ConcurrentLinkedDeque<Object>> optionalDeque = fluxDataCache.getData(cacheKey);
+                        optionalDeque.ifPresent(deque -> deque.add(value));
+                    })
+                    .thenReturn(value);
+        }));
     }
 
     @Override

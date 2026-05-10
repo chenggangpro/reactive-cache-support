@@ -54,44 +54,36 @@ public class CaffeineReactiveCacheFluxAdapter implements ReactiveCacheFluxAdapte
     @Override
     public <T> Flux<T> cacheData(@NonNull String cacheKey, @NonNull Duration cacheDuration, @NonNull Flux<T> sourcePublisher) {
         final AtomicBoolean initFlag = new AtomicBoolean(false);
-        return sourcePublisher.publish(sharedFlux -> {
-            Flux<T> cacheOperationFlux = sharedFlux.concatMap(item -> {
-                if (initFlag.compareAndSet(false, true)) {
-                    return Mono.fromRunnable(() -> {
-                        fluxDataCache.compute(
+        return sourcePublisher.publish(sharedFlux -> sharedFlux.concatMap(item -> {
+            if (initFlag.compareAndSet(false, true)) {
+                return Mono.fromRunnable(() -> fluxDataCache.compute(
                                 cacheKey,
                                 (key, value) -> {
                                     ConcurrentLinkedDeque<Object> data = new ConcurrentLinkedDeque<>();
                                     data.add(item);
-                                    if (Objects.isNull(value)) {
-                                        Cache<String, ConcurrentLinkedDeque<Object>> cache = Caffeine.newBuilder()
-                                                .expireAfterWrite(cacheDuration)
-                                                .scheduler(Scheduler.systemScheduler())
-                                                .removalListener(this::removalListener)
-                                                .build();
-                                        cache.put(cacheKey, data);
-                                        return cache;
+                                    if (Objects.nonNull(value)) {
+                                        value.invalidateAll();
                                     }
-                                    value.invalidateAll();
                                     Cache<String, ConcurrentLinkedDeque<Object>> cache = Caffeine.newBuilder()
                                             .expireAfterWrite(cacheDuration)
-                                            .removalListener(this::removalListener)
                                             .scheduler(Scheduler.systemScheduler())
+                                            .removalListener(this::removalListener)
                                             .build();
                                     cache.put(cacheKey, data);
                                     return cache;
                                 }
-                        );
-                    });
-                }
-                return Mono.fromCallable(() -> fluxDataCache.get(cacheKey))
-                        .flatMap(asyncCache -> Mono.fromCallable(() -> asyncCache.getIfPresent(cacheKey))
-                                .flatMap(deque -> Mono.fromRunnable(() -> deque.add(item)))
-                        );
-            });
-            return Flux.just(cacheOperationFlux, sharedFlux)
-                    .flatMap(Flux::from);
-        });
+                        ))
+                        .thenReturn(item);
+            }
+            return Mono.fromCallable(() -> fluxDataCache.get(cacheKey))
+                    .flatMap(cache -> Mono.fromRunnable(() -> {
+                        ConcurrentLinkedDeque<Object> deque = cache.getIfPresent(cacheKey);
+                        if (Objects.nonNull(deque)) {
+                            deque.add(item);
+                        }
+                    }))
+                    .thenReturn(item);
+        }));
     }
 
     private void removalListener(@Nullable String key, @Nullable Object value, RemovalCause cause) {

@@ -88,7 +88,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                                                     )
                                     ))
                             ,
-                            currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                            currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                                     .doOnNext(operationId -> log.debug(
                                             "(Mono)Release initialization lock, CacheName:{}, CacheKey:{}, " +
                                                     "ReleasedOperationId:{}, CurrentOperationId:{}",
@@ -100,7 +100,8 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                                     .then()
                             ,
                             (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName,
-                                            cacheKey
+                                            cacheKey,
+                                            currentOperationId
                                     )
                                     .doOnNext(operationId -> log.debug(
                                             "(Mono)Release initialization lock on Error, " +
@@ -113,7 +114,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                                     ))
                                     .then()
                             ,
-                            (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                            (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                                     .doOnNext(operationId -> log.debug(
                                             "(Mono)Release initialization lock, " +
                                                     "CacheName:{}, CacheKey:{}, " +
@@ -139,7 +140,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                         .filter(Boolean::booleanValue)
                         .flatMap(hasData -> reactiveCacheMonoAdapter.cleanupData(cacheKey))
                 ,
-                currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                currentOperationId -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                         .doOnNext(operationId -> log.debug(
                                 "(Cleanup)Release initialization lock, CacheName:{}, CacheKey:{}, " +
                                         "ReleasedOperationId:{}, CurrentOperationId:{}",
@@ -150,7 +151,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                         ))
                         .then()
                 ,
-                (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                (currentOperationId, throwable) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                         .doOnNext(operationId -> log.debug(
                                 "(Cleanup)Release initialization lock on Error, " +
                                         "CacheName:{}, CacheKey:{}, " +
@@ -162,7 +163,7 @@ public class DefaultReactiveMonoCache implements ReactiveMonoCache {
                         ))
                         .then()
                 ,
-                (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey)
+                (currentOperationId) -> this.reactiveCacheLock.releaseInitializeLock(cacheName, cacheKey, currentOperationId)
                         .doOnNext(operationId -> log.debug(
                                 "(Cleanup)Release initialization lock, " +
                                         "CacheName:{}, CacheKey:{}, " +

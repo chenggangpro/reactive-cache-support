@@ -86,14 +86,13 @@ class InmemoryInitializeLockTest extends BaseTest {
 
     @Test
     void releaseInitializeLock() {
-        Mono<String> lockMono = inmemoryInitializeLock.tryLockInitializeLock(cacheName,
+        inmemoryInitializeLock.tryLockInitializeLock(cacheName,
                 cacheKey,
                 Duration.ofSeconds(3)
-        );
-        Mono<String> releaseMono = inmemoryInitializeLock.releaseInitializeLock(cacheName,
-                cacheKey
-        );
-        lockMono.then(releaseMono)
+        ).flatMap(operationId -> inmemoryInitializeLock.releaseInitializeLock(cacheName,
+                cacheKey,
+                operationId
+        ))
                 .as(StepVerifier::create)
                 .expectNextCount(1)
                 .verifyComplete();
@@ -102,7 +101,8 @@ class InmemoryInitializeLockTest extends BaseTest {
     @Test
     void releaseInitializeLockWhenEmpty() {
         inmemoryInitializeLock.releaseInitializeLock(cacheName,
-                        cacheKey
+                        cacheKey,
+                        java.util.UUID.randomUUID().toString()
                 )
                 .as(StepVerifier::create)
                 .verifyComplete();
@@ -167,16 +167,13 @@ class InmemoryInitializeLockTest extends BaseTest {
                                     })
                                     .thenReturn(true);
                         },
-                        value -> inmemoryInitializeLock.releaseInitializeLock(cacheName,
-                                cacheKey
-                        ),
+                        value -> inmemoryInitializeLock.releaseInitializeLock(cacheName, cacheKey, value),
                         (value, throwable) -> inmemoryInitializeLock.releaseInitializeLock(cacheName,
-                                        cacheKey
+                                        cacheKey,
+                                        value
                                 )
                                 .then(Mono.error(throwable)),
-                        value -> inmemoryInitializeLock.releaseInitializeLock(cacheName,
-                                cacheKey
-                        )
+                        value -> inmemoryInitializeLock.releaseInitializeLock(cacheName, cacheKey, value)
                 )
                 .onErrorResume(ReactiveCacheLoadExhaustedException.class, throwable -> Mono.just(false));
     }

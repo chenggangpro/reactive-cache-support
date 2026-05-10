@@ -66,7 +66,7 @@ public class InmemoryReactiveCacheLock implements ReactiveCacheLock {
                         key -> new ConcurrentLinkedDeque<>()
                 ))
                 .map(deque -> deque.add(currentOperationId))
-                .flatMap(__ -> Mono.just(lockContainer.get(cacheInitializeLockKey))
+                .flatMap(__ -> Mono.fromCallable(() -> lockContainer.get(cacheInitializeLockKey))
                         .map(ConcurrentLinkedDeque::peekFirst)
                 )
                 .filter(value -> Objects.equals(value, currentOperationId))
@@ -84,17 +84,13 @@ public class InmemoryReactiveCacheLock implements ReactiveCacheLock {
                                     cacheKey,
                                     currentOperationId
                             );
-                            return Mono.just(lockContainer.get(cacheInitializeLockKey))
-                                    .flatMap(deque -> Mono.fromRunnable(() ->
-                                                            deque.removeIf(value -> Objects.equals(value,
-                                                                            currentOperationId
-                                                                    )
-                                                            )
-                                                    )
-                                                    .then(Mono.error(new ReactiveCacheLoadExhaustedException(cacheName,
-                                                            cacheKey
-                                                    )))
-                                    );
+                            return Mono.fromRunnable(() -> {
+                                        ConcurrentLinkedDeque<String> deque = lockContainer.get(cacheInitializeLockKey);
+                                        if (Objects.nonNull(deque)) {
+                                            deque.removeIf(value -> Objects.equals(value, currentOperationId));
+                                        }
+                                    })
+                                    .then(Mono.error(new ReactiveCacheLoadExhaustedException(cacheName, cacheKey)));
                         })
                 )
                 .doOnNext(operationId -> log.debug(
@@ -109,16 +105,20 @@ public class InmemoryReactiveCacheLock implements ReactiveCacheLock {
     }
 
     @Override
-    public Mono<String> releaseInitializeLock(@NonNull String cacheName, @NonNull String cacheKey) {
+    public Mono<String> releaseInitializeLock(@NonNull String cacheName, @NonNull String cacheKey, @NonNull String operationId) {
         final String cacheInitializeLockKey = decorateCacheInitializeLockKey(cacheName, cacheKey);
-        return Mono.fromCallable(() -> lockContainer.get(cacheInitializeLockKey))
-                .map(ConcurrentLinkedDeque::pollFirst)
-                .doOnNext(operationId -> log.debug(
-                        "(Release initialization lock): " +
-                                "CacheName: {}, CacheKey: {},LockedOperationId: {}",
+        return Mono.fromCallable(() -> {
+                    ConcurrentLinkedDeque<String> deque = lockContainer.get(cacheInitializeLockKey);
+                    if (Objects.nonNull(deque) && deque.removeIf(value -> Objects.equals(value, operationId))) {
+                        return operationId;
+                    }
+                    return null;
+                })
+                .doOnNext(removedOperationId -> log.debug(
+                        "(Release initialization lock): CacheName: {}, CacheKey: {}, ReleasedOperationId: {}",
                         cacheName,
                         cacheKey,
-                        operationId
+                        removedOperationId
                 ));
     }
 
