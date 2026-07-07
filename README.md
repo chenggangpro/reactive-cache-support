@@ -3,7 +3,7 @@
 [![Java CI with Maven](https://github.com/chenggangpro/reactive-cache-support/actions/workflows/maven-ci.yml/badge.svg?branch=master)](https://github.com/chenggangpro/reactive-cache-support/actions/workflows/maven-ci.yml)
 [![Coverage](.github/badges/jacoco.svg)](https://github.com/chenggangpro/reactive-cache-support/actions/workflows/maven-ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Maven Central](https://maven-badges.sml.io/maven-central/pro.chenggang/reactive-cache-support/badge.svg)](https://central.sonatype.com/artifact/pro.chenggang/reactive-cache-support)
+[![Maven Central](https://img.shields.io/maven-central/v/pro.chenggang/reactive-cache-support?versionSuffix=RELEASE&label=%20&color=%2352c82c)](https://search.maven.org/artifact/pro.chenggang/reactive-cache-support)
 
 #### The aim of this project is to implement a general approach to reactive cache operations.
 
